@@ -96,6 +96,10 @@
     { "path": "./packages/client/locale" },
     { "path": "./packages/client/ui-renderer" },
     { "path": "./packages/client/web" },
+    { "path": "./packages/client/ui-change-monitor" },
+    { "path": "./packages/client/ui-voice-input" },
+    { "path": "./packages/client/ui-background" },
+    { "path": "./packages/client/ui-turn-sounds" },
     { "path": "./apps/web" }
   ]
 }

@@ -305,6 +305,10 @@
     { "path": "./packages/lsp/lsp" },
     { "path": "./packages/lsp/lsp-stdio" },
     { "path": "./packages/lsp/tool-lsp" },
-    { "path": "./apps/cli" }
+    { "path": "./apps/cli" },
+    { "path": "./packages/session/change-monitor" },
+    { "path": "./packages/web/tool-browser" },
+    { "path": "./packages/shell/tool-screenshot" },
+    { "path": "./packages/shell/tool-input" }
   ]
 }

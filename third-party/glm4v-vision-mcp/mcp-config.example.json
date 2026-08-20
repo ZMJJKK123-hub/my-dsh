@@ -1,0 +1,16 @@
+{
+  "$schema": "https://json.schemastore.org/mcp.json",
+  "mcpServers": {
+    "glm4v": {
+      "command": "python3",
+      "args": [
+        "/ABS/PATH/glm4v-vision-mcp/server/glm4v_mcp_server.py"
+      ],
+      "env": {
+        "ZHIPU_API_KEY": "PASTE_YOUR_ZHIPU_API_KEY_HERE"
+      },
+      "startup_timeout_sec": 120,
+      "tool_timeout_sec": 300
+    }
+  }
+}

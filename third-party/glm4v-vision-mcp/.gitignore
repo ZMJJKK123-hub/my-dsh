@@ -1,0 +1,20 @@
+# 虚拟环境
+.venv/
+venv/
+__pycache__/
+*.pyc
+
+# 密钥与环境变量（含真实 ZHIPU_API_KEY，严禁提交）
+server/.env
+.env
+*.env.local
+
+# 系统与编辑器
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+
+# 临时验证产物
+.verify_tmp_*.png
+*.tmp

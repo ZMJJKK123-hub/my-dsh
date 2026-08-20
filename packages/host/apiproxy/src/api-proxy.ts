@@ -70,7 +70,7 @@ import type { GoalRef as CoreGoalRef } from '@deepseek-ai/dsh-goal'
 // Type-only edges: resolve the command-change stream and `ctx.get('skills')`.
 import type {} from '@deepseek-ai/dsh-commands'
 // Type-only: the dynamic-package runner's forwarded-event declarations. Its
-// client-safe `./types` subpath deliberately, not the package root — the root
+// client-safe `./types` subpath deliberately, not the package root 鈥?the root
 // merges `ctx.dynamicCordisRunner`, and a dependency on that package would
 // rebuild the api-remotes cycle this direction exists to avoid.
 import type {} from '@deepseek-ai/dsh-cordis-host-runner/types'
@@ -222,11 +222,11 @@ function isAborted(signal: AbortSignal): boolean {
 /**
  * Message-boundary pagination: count maxMessages append-origin messages
  * backwards from the window tail. Replacement copies never entered the
- * conversation a reader sees — they restate a shadowed range for the model
- * alone — so they consume no quota; the page stays one contiguous raw range,
+ * conversation a reader sees 鈥?they restate a shadowed range for the model
+ * alone 鈥?so they consume no quota; the page stays one contiguous raw range,
  * which keeps a compaction's log-only `compaction/summary` record on the same page as its
  * replacement. The cut is the starting seq of the oldest message group (chunks
- * group via sourceEventSeqs — never cut mid-message). The tail page naturally
+ * group via sourceEventSeqs 鈥?never cut mid-message). The tail page naturally
  * includes the in-progress partial.
  */
 function paginate(
@@ -391,7 +391,7 @@ class FrameQueue<F> {
 
 /**
  * Server-side frame mint: pure pushes get a fresh rpcId per frame (answerable
- * frames — approval/question requested — mint their stable id in their
+ * frames 鈥?approval/question requested 鈥?mint their stable id in their
  * pending registries instead).
  */
 function frame<F>(payload: F): RpcRequest<F> {
@@ -404,7 +404,7 @@ function frame<F>(payload: F): RpcRequest<F> {
  * forwarded path applies no projection), not hostile input, so it throws rather
  * than degrading to a lossy frame. The throw surfaces where the forwarding
  * listener runs, so the emitter's own listener containment logs it and drops
- * that frame — loud in the Host log, not at load or at the emit. Exported for
+ * that frame 鈥?loud in the Host log, not at load or at the emit. Exported for
  * the test that owns this decision: every currently allowlisted event has a
  * statically JSON-safe payload, so a type-legal `ctx.emit` cannot reach the
  * rejection branch.
@@ -444,8 +444,8 @@ function jobViews(snapshots: readonly JobSnapshot[]): JobView[] {
 
 /**
  * Whether the session's conversation has started: no turn has run yet (a
- * turn is one model-loop execution). Standalone plugin events — command
- * lifecycle records, plan/mode, titles, goals — never open a turn, so
+ * turn is one model-loop execution). Standalone plugin events 鈥?command
+ * lifecycle records, plan/mode, titles, goals 鈥?never open a turn, so
  * running `/plan` or `/goal` on a fresh session keeps it blank
  * (list-hidden, reusable).
  */
@@ -587,7 +587,7 @@ export interface ApiProxyDefaults {
   defaultModelSelection: () => ModelSelection
   /**
    * Record a selection as the new default. Either absent, or a closure that
-   * may itself decline — the gateway plugin always passes one, and it no-ops
+   * may itself decline 鈥?the gateway plugin always passes one, and it no-ops
    * when the deployment mounts no settings provider or when the write races
    * service teardown. A switch then stays process-local. A rejection is
    * reported and swallowed: the switch already applies to its own session,
@@ -605,7 +605,7 @@ export interface ApiProxyDefaults {
   /** Maximum artifact size eligible for one cold blankness read. */
   coldBlankProbeMaxBytes?: number
   /**
-   * Whether handing a path to the native opener can work at all — the
+   * Whether handing a path to the native opener can work at all 鈥?the
    * `hasDocument` capability the preset roster reports, and the switch
    * between opening a preset directory and answering its path as text.
    * Absent, an injected `openPath` counts as openable and everything else
@@ -680,7 +680,7 @@ function matchesQuestions(payload: QuestionResponsePayload, pending: PendingQues
 /**
  * Compute the render intent for a tool/call or tool/result event through the
  * presenters registered at this moment; every other event type gets none. A
- * result's presenter needs its call's parsed args — `argsFor` supplies them
+ * result's presenter needs its call's parsed args 鈥?`argsFor` supplies them
  * (live: the per-session call table; history: an in-page backscan), returning
  * undefined when the pairing is unavailable (e.g. the call fell off the page),
  * which soft-falls to no view. Presenter or JSON.parse throws also soft-fall:
@@ -693,7 +693,7 @@ function viewFor(
   // Presenters live with the definitions, and definitions live in the scope
   // chain: a preset registers its tools into its standing layer. A live agent
   // is a scope whose chain passes through its preset; a cold read passes the
-  // preset's standing key directly — no agent, no resume. An undefined scope
+  // preset's standing key directly 鈥?no agent, no resume. An undefined scope
   // sees only the global layer, which is the pre-preset deployment shape.
   scope?: ScopeKey,
 ): ToolEventView | undefined {
@@ -727,7 +727,7 @@ function viewFor(
 /**
  * Resolve a tool/result's call pairing by scanning a window of events backwards
  * for the matching tool/call. Used by the history path (the page is the
- * window — a cross-page pairing soft-falls to no view) and by live-path table
+ * window 鈥?a cross-page pairing soft-falls to no view) and by live-path table
  * misses after a reconnect-eviction.
  */
 function backscanArgs(events: readonly SessionEvent[], callId: string): { name: string; args: unknown } | undefined {
@@ -766,7 +766,7 @@ function historyPage(
 
 /**
  * The projection baseline for one history tail page: the registry's
- * watermark-cache snapshot — one fully synchronous read (no await between the
+ * watermark-cache snapshot 鈥?one fully synchronous read (no await between the
  * page slice and this), so all values and `asOfSeq` form a single consistent
  * cut and `asOfSeq` equals the window tail event seq. The carrier holds zero
  * domain knowledge (each value passed its unit's own schema inside the
@@ -793,10 +793,10 @@ function projectionsFor(ctx: Context, session: Session): SessionProjectionsBlock
  * The projection baseline of one session.list row, fail-soft: attached
  * sessions cut the registry's live watermark cache; cold sessions view the
  * persisted projection cache's identity-checked stored rows (zero log loads
- * either way — the listing use case the cache exists for). The block shape
+ * either way 鈥?the listing use case the cache exists for). The block shape
  * (values + asOfSeq) matches the history tail's, so a client seeds its
- * value store under the same higher-seq-wins rule. Any failure — and an
- * empty value set — yields an absent block: a listing without projections
+ * value store under the same higher-seq-wins rule. Any failure 鈥?and an
+ * empty value set 鈥?yields an absent block: a listing without projections
  * is degraded, never broken.
  */
 function listProjectionsFor(ctx: Context, meta: SessionHeader, session: Session | undefined): SessionProjectionsBlock | undefined {
@@ -824,7 +824,7 @@ function detachedProjectionsFor(
 /**
  * Best-effort projections for one subagent history page, fail-soft like
  * {@link listProjectionsFor}: a registered unit throwing on a corrupt payload
- * never blocks transcript reading — the page is served without the block.
+ * never blocks transcript reading 鈥?the page is served without the block.
  * @param ctx - context carrying the logger for the degradation warning.
  * @param childSessionId - the child whose page is being decorated.
  * @param compute - the arm-specific fold (live watermark or detached restore).
@@ -979,7 +979,7 @@ class AgentPresetConflict extends Error {
     super(
       existingPreset === undefined
         ? `session "${sessionId}" records no agent preset, so it cannot be adopted under one; `
-        + 'a deployment composing no roster records none on any session — '
+        + 'a deployment composing no roster records none on any session 鈥?'
         : `session "${sessionId}" already runs agent preset ${JSON.stringify(existingPreset)}; `
       + `requested ${JSON.stringify(requestedPreset)}. A session's preset is fixed at creation.`,
     )
@@ -1063,7 +1063,7 @@ export function createApiProxy(ctx: Context, defaults: ApiProxyDefaults): ApiPro
   /**
    * Serializes `agentPreset.select` per session. Two concurrent selects both
    * pass the blank check, and the second `unmountPresetFor` then finds nothing
-   * to unmount because the first already removed the record — leaving two
+   * to unmount because the first already removed the record 鈥?leaving two
    * compositions registered into one agent layer. The client's `busy` flag is
    * not enforcement: the wire is reachable directly.
    */
@@ -1093,7 +1093,7 @@ export function createApiProxy(ctx: Context, defaults: ApiProxyDefaults): ApiPro
    * directions: a session with a recorded request derives its selection from
    * its log, while a blank session (New Session reuses one rather than minting
    * another) reads any default saved after it was created. There is no create-time
-   * per-session override tier on this wire — if one returns (a create-options
+   * per-session override tier on this wire 鈥?if one returns (a create-options
    * contribution), it must fold in between the selection and the log.
    */
   function selectionFor(agent: Agent): WebModelSelectionRef {
@@ -1136,7 +1136,7 @@ export function createApiProxy(ctx: Context, defaults: ApiProxyDefaults): ApiPro
    * Reject an attempt to run an existing session under a different preset.
    *
    * A caller that names no preset always adopts the session as it is, so the
-   * common paths — reconnecting, resuming, retrying a create — are unaffected.
+   * common paths 鈥?reconnecting, resuming, retrying a create 鈥?are unaffected.
    * @param sessionId - the identity being adopted.
    * @param requested - the preset the request named, if any.
    * @param existing - the preset the session RUNS, if any; both callers resolve
@@ -1158,7 +1158,7 @@ export function createApiProxy(ctx: Context, defaults: ApiProxyDefaults): ApiPro
    * installs it.
    *
    * The id is resolved BEFORE the session exists because the session boundary
-   * snapshots `meta` before asynchronous setup begins — a preset discovered
+   * snapshots `meta` before asynchronous setup begins 鈥?a preset discovered
    * during setup could never reach the header. Mounting still happens in
    * setup, where a failure rolls the whole creation back rather than leaving a
    * published session whose capabilities are half-installed.
@@ -1202,7 +1202,7 @@ export function createApiProxy(ctx: Context, defaults: ApiProxyDefaults): ApiPro
     inspectApiRemoteSession(ctx, sessionId)
   // Cold resume composes the preset the session recorded, for the same reason
   // `session.create` does: its history was produced under that composition.
-  // Every generic entry point — prompt, models, commands — arrives here, so
+  // Every generic entry point 鈥?prompt, models, commands 鈥?arrives here, so
   // leaving it out meant a session opened after a restart ran on host tools
   // and the deployment persona. Resolved from the LOG, not the header: a
   // session that switched while blank ran its turns under the newer
@@ -1221,7 +1221,7 @@ export function createApiProxy(ctx: Context, defaults: ApiProxyDefaults): ApiPro
     for (const queue of muxQueues) queue.push(envelope)
   }
 
-  // Projection change feed → session/projection push frames. The carrier
+  // Projection change feed 鈫?session/projection push frames. The carrier
   // mints the wire frame (the Service Definition package holds no wire vocabulary); the
   // child activates only when a projection registry is composed, and the
   // subscription unwinds with this gateway's fiber.
@@ -1247,7 +1247,7 @@ export function createApiProxy(ctx: Context, defaults: ApiProxyDefaults): ApiPro
   // The imageLimits projection unit: the attachments config this proxy
   // enforces at prompt admission, constant per host boot. `apply` keeps the
   // same state reference for every event, so no change frames are ever
-  // pushed — baselines alone carry the value — and clients pre-check intake
+  // pushed 鈥?baselines alone carry the value 鈥?and clients pre-check intake
   // and label upload affordances from it. Registered here, not in the
   // attachment Service Definition: dsh-llm depends on dsh-attachment, so the
   // seam package cannot reference the projection registry without a cycle,
@@ -1353,8 +1353,8 @@ export function createApiProxy(ctx: Context, defaults: ApiProxyDefaults): ApiPro
   // The proxy is the approval channel for every agent this host owns: an ask
   // through `ctx.approval` becomes an answerable server-request on the mux
   // stream (stable rpcId), settled by POST /api/respond. The entry survives
-  // client disconnects — mux-open replays still-pending requested frames with
-  // the same rpcId (the refresh-recovery baseline) — and withdraws on the
+  // client disconnects 鈥?mux-open replays still-pending requested frames with
+  // the same rpcId (the refresh-recovery baseline) 鈥?and withdraws on the
   // ask's own abort signal (turn cancel), pushing `cancelled` to subscribers.
   if (ctx.get('approval') !== undefined) {
     // Teardown parity with the question provider above: a gateway disposed
@@ -1367,15 +1367,15 @@ export function createApiProxy(ctx: Context, defaults: ApiProxyDefaults): ApiPro
     ctx.on('approval/request', (req, next) => {
       // Dispatch rides a microtask behind the service's own signal check: an
       // abort landing in that window would register the abort listener AFTER
-      // the signal fired — never invoked, entry pending forever, zombie frame
+      // the signal fired 鈥?never invoked, entry pending forever, zombie frame
       // on every mux replay. Settle synchronously instead of publishing.
       if (req.signal?.aborted === true) return Promise.resolve<ApprovalOutcome>('cancelled')
       // The audit pair `approval/asked` is already appended by the service
       // before dispatch, but dispatch rides a microtask: parallel tool calls
       // can append several asked events before any answerer runs. THIS
       // request's event is therefore the newest asked event that is still
-      // undecided, unclaimed by another pending entry, and — when the ask
-      // names a call — carries the same callId.
+      // undecided, unclaimed by another pending entry, and 鈥?when the ask
+      // names a call 鈥?carries the same callId.
       const events = req.agent.session.events
       const claimed = new Set<ApprovalRequestId>()
       for (const entry of pendingApprovals.values()) claimed.add(entry.approvalId)
@@ -1388,17 +1388,15 @@ export function createApiProxy(ctx: Context, defaults: ApiProxyDefaults): ApiPro
         } else if (event.type === 'approval/asked') {
           if (decided.has(event.data.id) || claimed.has(event.data.id)) continue
           // Symmetric pairing: a callId-bearing ask only takes its own call's
-          // record, and a callId-less ask only takes a callId-less record —
-          // so neither shape can steal the other's audit id under parallel
-          // asks. (Today every producer — the tool executor — passes callId;
+          // record, and a callId-less ask only takes a callId-less record 鈥?          // so neither shape can steal the other's audit id under parallel
+          // asks. (Today every producer 鈥?the tool executor 鈥?passes callId;
           // the callId-less arm guards any future non-tool asker.)
           if ((req.callId ?? null) !== (event.data.callId ?? null)) continue
           approvalId = event.data.id
           break
         }
       }
-      // No asked event means the request bypassed the service's audit path —
-      // not this channel's question; delegate to the fail-closed default.
+      // No asked event means the request bypassed the service's audit path 鈥?      // not this channel's question; delegate to the fail-closed default.
       if (approvalId === undefined) return next()
       const id = approvalId
       return new Promise<ApprovalOutcome>((resolve) => {
@@ -1523,7 +1521,7 @@ export function createApiProxy(ctx: Context, defaults: ApiProxyDefaults): ApiPro
    *
    * A live agent is that scope itself (its chain passes through its preset's
    * standing layer). A cold session resolves its preset from the LOG, and the
-   * preset's STANDING key serves without resuming anything — ensuring the
+   * preset's STANDING key serves without resuming anything 鈥?ensuring the
    * mount composes plugins but starts no agent, session, or turn. No roster,
    * no recorded preset, or a preset the roster no longer supplies all fall
    * back to the global layer: the transcript still serves, with the generic
@@ -1642,7 +1640,7 @@ export function createApiProxy(ctx: Context, defaults: ApiProxyDefaults): ApiPro
     const agent = await creation
     if (hasSubagentOwner(agent.session, agent)) throw new SubagentSessionOwnership(sessionId)
     // Beside the cwd check for the same reason, and after the await so it
-    // covers every path that yields a live agent — freshly created, adopted
+    // covers every path that yields a live agent 鈥?freshly created, adopted
     // live, resumed from disk, or recovered by the concurrent-creation catch.
     assertPresetUnchanged(sessionId, presetId, resolveSessionPreset(agent.session))
     if (agent.session.header.cwd !== cwd) {
@@ -1734,7 +1732,7 @@ export function createApiProxy(ctx: Context, defaults: ApiProxyDefaults): ApiPro
    *
    * The service is per session: an agent preset mounts it behind an `isolate`
    * realm, which no host context resolves. Reading it from the root would
-   * answer "absent" for a session whose composition mounts it — so the lookup
+   * answer "absent" for a session whose composition mounts it 鈥?so the lookup
    * is keyed by the agent, and only a deployment composing it nowhere is
    * genuinely absent.
    */
@@ -1775,8 +1773,7 @@ export function createApiProxy(ctx: Context, defaults: ApiProxyDefaults): ApiPro
    * a session selecting it can start a turn. Catalog membership cannot answer
    * it: an adapter may serve a model its own catalog stopped advertising, so
    * a provider missing from the groups is not the same as one nothing serves.
-   * A composition with no llm registry at all cannot judge and says yes —
-   * the dispatch it would have refused fails on its own terms.
+   * A composition with no llm registry at all cannot judge and says yes 鈥?   * the dispatch it would have refused fails on its own terms.
    */
   function routeServed(provider: string): boolean {
     const llm = ctx.get('llm')
@@ -1886,8 +1883,8 @@ export function createApiProxy(ctx: Context, defaults: ApiProxyDefaults): ApiPro
 
   /**
    * Run one settings write (merge or wholesale replace) and acknowledge with
-   * the namespace's new redacted view. Every seam refusal — unknown or invalid
-   * namespace, read-only provider, schema validation, storage — becomes one
+   * the namespace's new redacted view. Every seam refusal 鈥?unknown or invalid
+   * namespace, read-only provider, schema validation, storage 鈥?becomes one
    * `settings-rejected` carrying the seam's own message.
    */
   async function settingsWrite(
@@ -2143,7 +2140,7 @@ export function createApiProxy(ctx: Context, defaults: ApiProxyDefaults): ApiPro
           }
         }
         // Echo the composition the session RUNS so a client can label it
-        // without waiting for the next list refresh — the create is the commit
+        // without waiting for the next list refresh 鈥?the create is the commit
         // point that knows it (a caller that named none gets the default).
         // Resolved from the log for the same reason `sessionListFields()` is:
         // this handler also adopts an already-live session, and one that
@@ -2730,7 +2727,7 @@ export function createApiProxy(ctx: Context, defaults: ApiProxyDefaults): ApiPro
           return ok(request, { workspace: workspaceView(workspace), created })
         } catch (error: unknown) {
           // The registry rejects a path that does not resolve to an existing
-          // directory (realpath ENOENT / not-a-directory) — the business
+          // directory (realpath ENOENT / not-a-directory) 鈥?the business
           // error of the typed-path flow, surfaced as a validation failure.
           return err(request, {
             code: 'workspace-invalid-path',
@@ -2746,8 +2743,8 @@ export function createApiProxy(ctx: Context, defaults: ApiProxyDefaults): ApiPro
         if (workspace === undefined) return workspaceNotFound(request, payload.workspaceId)
         const title = payload.title.trim()
         // Uniqueness AND the same-title no-op both ride the create chain so
-        // they observe the state left by earlier queued renames — checked
-        // up front, a queued A→A could report success while an earlier A→B
+        // they observe the state left by earlier queued renames 鈥?checked
+        // up front, a queued A鈫扐 could report success while an earlier A鈫払
         // still lands afterwards.
         const operation = workspaceCreationChain.then(async () => {
           if (title === workspace.title) return
@@ -2898,7 +2895,7 @@ export function createApiProxy(ctx: Context, defaults: ApiProxyDefaults): ApiPro
           return ok(request, await capability.list(request.payload.path, signal))
         } catch (error: unknown) {
           // An abort is the caller's own timeout/disconnect, not a server
-          // failure — same code pickDirectory and command.execute report.
+          // failure 鈥?same code pickDirectory and command.execute report.
           if (signal.aborted) {
             return err(request, { code: 'cancelled', message: 'directory listing was aborted', details: {} })
           }
@@ -2928,7 +2925,7 @@ export function createApiProxy(ctx: Context, defaults: ApiProxyDefaults): ApiPro
     },
 
     goals: {
-      // Mutations only — the read side is the 'goal' session projection.
+      // Mutations only 鈥?the read side is the 'goal' session projection.
       // Every verb resolves the session's agent (agentFor: implicit cold
       // resume, the command.* precedent) and acknowledges with the new CAS
       // ref; the committed goal/change event carries the whole value to every
@@ -3096,7 +3093,7 @@ export function createApiProxy(ctx: Context, defaults: ApiProxyDefaults): ApiPro
             throw new PresetNotWritableError(preset.id, 'it ships with the deployment')
           }
           // The id resolved against the Host's own roots is what selects the
-          // directory — no browser payload carries a path in either direction
+          // directory 鈥?no browser payload carries a path in either direction
           // unless the deployment has no opener to hand it to.
           const directory = dirname(preset.path)
           if (!canOpenPaths()) return ok(request, { opened: false as const, path: directory })
@@ -3154,8 +3151,8 @@ export function createApiProxy(ctx: Context, defaults: ApiProxyDefaults): ApiPro
         if (skillRegistry === undefined) {
           return err(request, { code: 'internal', message: 'skill registry is absent: neither this session\'s agent preset nor the host composition mounts @deepseek-ai/dsh-skill', details: {} })
         }
-        // The scope presenters resolve in — the live agent, else the recorded
-        // preset's standing key, else the global layer — so a cold session's
+        // The scope presenters resolve in 鈥?the live agent, else the recorded
+        // preset's standing key, else the global layer 鈥?so a cold session's
         // '/' popup lists the catalog its composition actually serves.
         const scope = await presenterScopeFor(sessionId, session)
         try {
@@ -3295,8 +3292,7 @@ export function createApiProxy(ctx: Context, defaults: ApiProxyDefaults): ApiPro
           active: active.has(entry.provider),
           ...entry.declared === undefined ? {} : { declared: entry.declared },
         }))
-        // Routes registered without a directory declaration still appear —
-        // they exist and serve models — just with no settings address. No
+        // Routes registered without a directory declaration still appear 鈥?        // they exist and serve models 鈥?just with no settings address. No
         // adapter claimed them, so nothing can say whether they are shipped.
         for (const provider of registered) {
           if (declared.has(provider.id)) continue
@@ -3329,7 +3325,7 @@ export function createApiProxy(ctx: Context, defaults: ApiProxyDefaults): ApiPro
         } catch (error: unknown) {
           // Every failure here is the user's next move, not a transport fault:
           // a wrong endpoint, a rejected key, or a protocol with no listing all
-          // end at the same place — fill the models in by hand. The details
+          // end at the same place 鈥?fill the models in by hand. The details
           // repeat only what the caller already sent, never the credential.
           return err(request, {
             code: 'model-discovery-failed',
@@ -3371,7 +3367,7 @@ export function createApiProxy(ctx: Context, defaults: ApiProxyDefaults): ApiPro
         // Background-task baseline. `ctx.agents.get` is the non-resuming read:
         // a session with no live Agent owns no tasks, so it correctly sees only
         // the unowned ones, and listing never revives a cold session. An empty
-        // set sends nothing — absence is how the client reads "no tasks".
+        // set sends nothing 鈥?absence is how the client reads "no tasks".
         const jobs = ctx.get('jobs')
         if (jobs !== undefined) {
           for (const session of ctx.sessions.list()) {
@@ -3609,13 +3605,13 @@ export function createApiProxy(ctx: Context, defaults: ApiProxyDefaults): ApiPro
 
     respond(message: ClientResponse): Promise<RpcReceipt> {
       // Route by the echoed rpcId (the wire correlation): approvals first,
-      // then questions — the two registries share one id space of UUIDs.
+      // then questions 鈥?the two registries share one id space of UUIDs.
       const approval = pendingApprovals.get(message.rpcId)
       if (approval !== undefined) {
         if (!message.result.ok) return Promise.resolve({ accepted: false, reason: 'bad-response' })
         const parsed = approvalResponsePayloadSchema.safeParse(message.result.value)
         // The payload's audit correlation must match the entry the rpcId routed
-        // to — a mismatched answer is malformed, not merely late.
+        // to 鈥?a mismatched answer is malformed, not merely late.
         if (!parsed.success || parsed.data.approvalId !== approval.approvalId || parsed.data.sessionId !== approval.sessionId) {
           return Promise.resolve({ accepted: false, reason: 'bad-response' })
         }
