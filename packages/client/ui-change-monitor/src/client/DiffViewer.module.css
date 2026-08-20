@@ -1,0 +1,162 @@
+/* Red-green diff viewer: neutral context, error-tinted deletions, success-tinted additions. */
+
+.root {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  border: 1px solid var(--dsw-alias-border-l3);
+  border-radius: 12px;
+  overflow: hidden;
+  background: var(--dsw-alias-bg-layer-1);
+  box-shadow: var(--dsw-shadow-lv2, 0 8px 28px rgba(15, 30, 72, 0.14));
+  font-family: var(--dsw-alias-font-family-mono, ui-monospace, SFMono-Regular, Consolas, monospace);
+  font-size: 12.5px;
+  line-height: 1.6;
+}
+
+.header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 10px;
+  border-bottom: 1px solid var(--dsw-alias-border-l3);
+  background: var(--dsw-alias-bg-layer-2);
+  font-family: var(--dsw-alias-font-family, system-ui, sans-serif);
+}
+
+.status {
+  font-weight: 600;
+  font-size: 12px;
+  width: 16px;
+  text-align: center;
+}
+
+.status.modified {
+  color: var(--dsw-alias-state-business-primary);
+}
+
+.status.added {
+  color: var(--dsw-alias-state-success-primary);
+}
+
+.status.deleted {
+  color: var(--dsw-alias-state-error-primary);
+}
+
+.path {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--dsw-alias-label-primary);
+}
+
+.counts {
+  display: inline-flex;
+  gap: 6px;
+  font-size: 12px;
+}
+
+.addCount {
+  color: var(--dsw-alias-state-success-primary);
+}
+
+.delCount {
+  color: var(--dsw-alias-state-error-primary);
+}
+
+.copy {
+  border: none;
+  border-radius: 4px;
+  padding: 1px 8px;
+  background: var(--dsw-alias-interactive-bg-hover);
+  color: var(--dsw-alias-label-secondary);
+  font: inherit;
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.copy:hover {
+  background: var(--dsw-alias-interactive-bg-hover-accent);
+  color: var(--dsw-alias-label-primary);
+}
+
+.binary {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 10px 12px;
+  color: var(--dsw-alias-label-tertiary);
+  font-family: var(--dsw-alias-font-family, system-ui, sans-serif);
+  font-size: 12.5px;
+}
+
+.body {
+  max-height: 480px;
+  overflow: auto;
+  padding: 4px 0;
+  /* The diff viewer scrolls on the elevated layer-2 surface (header): rebind
+     the scrollbar indirection to the l2 pair so the thumb matches. */
+  --dsh-scrollbar-thumb: var(--dsw-alias-scrollbar-bg-l2);
+  --dsh-scrollbar-thumb-hover: var(--dsw-alias-scrollbar-hover-l2);
+}
+
+.line {
+  display: grid;
+  grid-template-columns: 44px 44px 18px minmax(0, 1fr);
+  min-height: 20px;
+  white-space: pre;
+}
+
+.oldNo,
+.newNo {
+  color: var(--dsw-alias-label-dimmed);
+  text-align: right;
+  padding-right: 8px;
+  user-select: none;
+}
+
+.sign {
+  text-align: center;
+  user-select: none;
+  color: var(--dsw-alias-label-tertiary);
+}
+
+.text {
+  overflow-x: hidden;
+  color: var(--dsw-alias-label-primary);
+}
+
+.lineDel {
+  background: color-mix(in srgb, var(--dsw-alias-state-error-primary) 20%, transparent);
+}
+
+.lineDel .text,
+.lineDel .sign {
+  color: var(--dsw-alias-state-error-primary);
+}
+
+.lineAdd {
+  background: color-mix(in srgb, var(--dsw-alias-state-success-primary) 20%, transparent);
+}
+
+.lineAdd .text,
+.lineAdd .sign {
+  color: var(--dsw-alias-state-success-primary);
+}
+
+/* Unchanged context rows: neutral, clearly distinct from the red/green edits. */
+.lineContext {
+  background: color-mix(in srgb, var(--dsw-alias-label-dimmed) 8%, transparent);
+}
+
+/* Folded unchanged run: "N lines skipped" between changes. */
+.skipped {
+  grid-column: 1 / -1;
+  text-align: center;
+  padding: 2px 0;
+  color: var(--dsw-alias-label-tertiary);
+  background: color-mix(in srgb, var(--dsw-alias-label-dimmed) 5%, transparent);
+  font-size: 12px;
+  user-select: none;
+}

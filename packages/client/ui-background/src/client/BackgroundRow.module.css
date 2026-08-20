@@ -1,0 +1,51 @@
+/* Background settings row: title, preview, upload/remove buttons. */
+
+.group {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.title {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--dsw-alias-label-primary);
+}
+
+.preview {
+  width: 100%;
+  max-width: 320px;
+  max-height: 120px;
+  object-fit: cover;
+  border: 1px solid var(--dsw-alias-border-l2);
+  border-radius: 8px;
+}
+
+.actions {
+  display: flex;
+  gap: 8px;
+}
+
+.button {
+  border: 1px solid var(--dsw-alias-border-l2);
+  border-radius: 6px;
+  padding: 4px 12px;
+  background: var(--dsw-alias-interactive-bg-hover);
+  color: var(--dsw-alias-label-primary);
+  font: inherit;
+  font-size: 12.5px;
+  cursor: pointer;
+}
+
+.button:hover {
+  background: var(--dsw-alias-interactive-bg-hover-accent);
+}
+
+.error {
+  font-size: 12px;
+  color: var(--dsw-alias-state-error-primary);
+}
+
+.fileInput {
+  display: none;
+}

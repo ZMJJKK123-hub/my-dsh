@@ -1,0 +1,42 @@
+/* Composer mic button: quiet by default, error-red when listening. */
+
+.trigger {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  border: none;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--dsw-alias-label-tertiary);
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+}
+
+.trigger:hover {
+  background: var(--dsw-alias-interactive-bg-hover);
+  color: var(--dsw-alias-label-primary);
+}
+
+.listening {
+  color: var(--dsw-alias-state-error-primary);
+  background: color-mix(in srgb, var(--dsw-alias-state-error-primary) 14%, transparent);
+  animation: voice-pulse 1.2s ease-in-out infinite;
+}
+
+.listening:hover {
+  color: var(--dsw-alias-state-error-primary);
+  background: color-mix(in srgb, var(--dsw-alias-state-error-primary) 20%, transparent);
+}
+
+.icon {
+  width: 16px;
+  height: 16px;
+}
+
+@keyframes voice-pulse {
+  0%, 100% { box-shadow: 0 0 0 0 color-mix(in srgb, var(--dsw-alias-state-error-primary) 30%, transparent); }
+  50% { box-shadow: 0 0 0 4px color-mix(in srgb, var(--dsw-alias-state-error-primary) 0%, transparent); }
+}
