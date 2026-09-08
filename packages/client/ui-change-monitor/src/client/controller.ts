@@ -6,7 +6,7 @@
  * @module @deepseek-ai/dsh-client-ui-change-monitor/client
  */
 
-import type { SessionId } from '@deepseek-ai/dsh-client-runtime/client'
+import type { SessionId } from '@deepseek-ai/dsh-session/types'
 import type { RemoteResult } from '@deepseek-ai/dsh-typert-protocol'
 import type {
   ChangeFileRequest, ChangeFileResult, ChangeSummaryResult,

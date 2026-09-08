@@ -6,13 +6,17 @@
  * @module @dsh-custom/dsh-client-ui-change-monitor/client
  */
 
-import type { ClientContext, ISessions, SessionId } from '@deepseek-ai/dsh-client-runtime/client'
+import type { Context as ClientContext } from '@deepseek-ai/cordis'
+import type { ISessions } from '@deepseek-ai/dsh-api-session-controller/client'
+import type { SessionId } from '@deepseek-ai/dsh-session/types'
 // Type-only: pulls the generated changeMonitor Remote merge into ctx.remote.
 import type {} from '@dsh-custom/dsh-change-monitor/remote'
 // Type-only: pulls the locale plugin's Context merge (ctx.locale).
 import type {} from '@deepseek-ai/dsh-client-locale/client'
 // Type-only: pulls the ui-conversation SlotMap merges (turnTail).
 import type {} from '@deepseek-ai/dsh-client-ui-conversation/client'
+// Type-only: pulls the SlotRegistry service merge (ctx.slots).
+import type {} from '@deepseek-ai/dsh-client-ui-renderer/client'
 import changeMonitorRemote from '@dsh-custom/dsh-change-monitor/remote'
 import { ChangeMonitorController, type ChangeMonitorRemote as ChangeMonitorRemoteShape } from './controller.ts'
 import { ChangesRow } from './ChangesRow.tsx'

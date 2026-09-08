@@ -3,19 +3,23 @@
  * turn ends and a question chime when the agent asks the user, with settings
  * under a dedicated "提示音" settings page.
  *
- * @module @deepseek-ai/dsh-client-ui-turn-sounds/client
+ * @module @dsh-custom/dsh-client-ui-turn-sounds/client
  */
 
-import type {
-  ClientContext, ConversationSnapshot, SessionId,
-} from '@deepseek-ai/dsh-client-runtime/client'
+import type { Context as ClientContext } from '@deepseek-ai/cordis'
+import type { SessionId } from '@deepseek-ai/dsh-session/types'
+import type { SessionSnapshot } from '@deepseek-ai/dsh-api-session-controller/client'
 // Type-only: the settings slot declaration lives in ui-settings.
 import type {} from '@deepseek-ai/dsh-client-ui-settings/client'
+// Type-only: pulls the SlotRegistry service merge (ctx.slots).
+import type {} from '@deepseek-ai/dsh-client-ui-renderer/client'
+// Type-only: pulls the uiSession service merge (ctx.uiSession.pendingInteractions).
+import type {} from '@deepseek-ai/dsh-client-ui-session/client'
 import { loadSettings, playSound, primeAudioOnInteraction } from './sounds.ts'
 import { SoundSettingsSection } from './SoundSettingsSection.tsx'
 
 /** Services required by the browser plugin. */
-export const inject = ['slots', 'sessions']
+export const inject = ['slots', 'sessions', 'uiSession']
 
 /**
  * Register the settings page and the session-event sound listener.
@@ -34,44 +38,17 @@ export function apply(ctx: ClientContext): void {
   // ── global live sound listener ─────────────────────────────────────────
   // Listen to every listed session, not just the active one, so sounds reach
   // the user even when the dsh tab is in the background or another session is
-  // running.
-  const knownTurns = new Map<SessionId, Set<number>>()
-  const knownQuestions = new Map<SessionId, Set<string>>()
-  const seeded = new Set<SessionId>()
+  // running. A completed turn is the `running` flag's true→false edge, so the
+  // first snapshot of a session only seeds the baseline and never replays
+  // history as sound.
+  const runningSeen = new Map<SessionId, boolean>()
   const unsubscribers = new Map<SessionId, () => void>()
 
-  const handleSnapshot = (sessionId: SessionId, snapshot: ConversationSnapshot): void => {
-    const settings = loadSettings()
-    const turns = knownTurns.get(sessionId) ?? new Set<number>()
-    const questions = knownQuestions.get(sessionId) ?? new Set<string>()
-
-    if (!seeded.has(sessionId)) {
-      // Wait for the session to finish loading before establishing the
-      // baseline; otherwise a refresh would seed an empty snapshot and then
-      // replay history as new turns when the conversation opens.
-      if (snapshot.openState === 'cold' || snapshot.openState === 'loading') return
-      for (const turn of snapshot.turnEnds.keys()) turns.add(turn)
-      for (const pending of snapshot.pending) {
-        if (pending.kind === 'question') questions.add(pending.key)
-      }
-      seeded.add(sessionId)
-    } else {
-      for (const turn of snapshot.turnEnds.keys()) {
-        if (!turns.has(turn)) {
-          turns.add(turn)
-          playSound('completion', settings)
-        }
-      }
-      for (const pending of snapshot.pending) {
-        if (pending.kind === 'question' && !questions.has(pending.key)) {
-          questions.add(pending.key)
-          playSound('question', settings)
-        }
-      }
-    }
-
-    knownTurns.set(sessionId, turns)
-    knownQuestions.set(sessionId, questions)
+  const handleSnapshot = (sessionId: SessionId, snapshot: SessionSnapshot): void => {
+    const previous = runningSeen.get(sessionId)
+    runningSeen.set(sessionId, snapshot.running)
+    if (previous === undefined) return
+    if (previous && !snapshot.running) playSound('completion', loadSettings())
   }
 
   const attachSession = (sessionId: SessionId): void => {
@@ -92,9 +69,7 @@ export function apply(ctx: ClientContext): void {
       if (!ids.has(sessionId)) {
         unsubscribe()
         unsubscribers.delete(sessionId)
-        seeded.delete(sessionId)
-        knownTurns.delete(sessionId)
-        knownQuestions.delete(sessionId)
+        runningSeen.delete(sessionId)
       }
     }
     for (const sessionId of ids) attachSession(sessionId)
@@ -103,8 +78,33 @@ export function apply(ctx: ClientContext): void {
   const unsubscribeList = ctx.sessions.list.subscribe(syncSessions)
   syncSessions()
 
+  // ── question chime over the global pending-interaction source ──────────
+  // A question the agent asks surfaces as a 'question' entry in
+  // ctx.uiSession.pendingInteractions across every session. The first read
+  // only seeds the known keys; afterwards each newly published key chimes.
+  // Replacement requests must publish a fresh key, so a key can never return.
+  let questionsSeeded = false
+  const knownQuestionKeys = new Set<string>()
+  const notifyPending = (): void => {
+    const current = ctx.uiSession.pendingInteractions.getSnapshot()
+    const live = new Set<string>()
+    for (const interaction of current.values()) {
+      if (interaction.kind !== 'question') continue
+      live.add(interaction.key)
+      if (questionsSeeded && !knownQuestionKeys.has(interaction.key)) {
+        playSound('question', loadSettings())
+      }
+    }
+    knownQuestionKeys.clear()
+    for (const key of live) knownQuestionKeys.add(key)
+  }
+  notifyPending()
+  questionsSeeded = true
+  const unsubscribePending = ctx.uiSession.pendingInteractions.subscribe(notifyPending)
+
   ctx.effect(() => () => {
     unsubscribeList()
+    unsubscribePending()
     for (const unsubscribe of unsubscribers.values()) unsubscribe()
     unsubscribers.clear()
   }, 'ui-turn-sounds: session listener')

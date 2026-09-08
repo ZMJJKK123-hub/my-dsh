@@ -52,9 +52,9 @@ function removeEngine(): void {
 function actions(setDraft: (text: string) => void = vi.fn()): VoiceInputProps['inputActions'] {
   return {
     setDraft,
-    addImages: vi.fn(() => true),
-    removeImage: vi.fn(),
-    pruneImages: vi.fn(),
+    addAttachments: vi.fn(() => true),
+    removeAttachment: vi.fn(),
+    pruneAttachments: vi.fn(),
     submit: vi.fn(),
   }
 }

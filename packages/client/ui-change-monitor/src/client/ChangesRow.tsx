@@ -8,7 +8,7 @@
 import { useEffect, useState } from 'react'
 import type { ChangeSetSummary } from '@dsh-custom/dsh-change-monitor'
 import type { InjectFace, PropsLocale } from '@deepseek-ai/dsh-client-ui-slots'
-import type { TurnTailOwnerProps } from '@deepseek-ai/dsh-client-ui-conversation/client'
+import type { TurnTailOwnerProps } from '@deepseek-ai/dsh-client-ui-chat/client'
 import { ChangesPanel } from './ChangesPanel.tsx'
 import type { ChangeMonitorInjected } from './slots.ts'
 import { NS } from './locales.ts'

@@ -1,4 +1,4 @@
-﻿{
+{
   "extends": "../../../tsconfig.base.client.json",
   "compilerOptions": {
     "rootDir": "src",
@@ -9,13 +9,16 @@
   ],
   "references": [
     {
-      "path": "../../../vendor/cordis"
+      "path": "../../../packages/api/session-controller/tsconfig.client.json"
     },
     {
       "path": "../../../packages/client/locale"
     },
     {
-      "path": "../../../packages/client/runtime"
+      "path": "../../../packages/client/ui-renderer"
+    },
+    {
+      "path": "../../../packages/client/ui-session"
     },
     {
       "path": "../../../packages/client/ui-settings"
@@ -24,7 +27,13 @@
       "path": "../../../packages/client/ui-slots"
     },
     {
+      "path": "../../../packages/core/session"
+    },
+    {
       "path": "../../../packages/runtime-diagnostics/invariants"
+    },
+    {
+      "path": "../../../vendor/cordis"
     }
   ]
 }
