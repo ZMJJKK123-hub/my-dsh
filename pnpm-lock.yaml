@@ -11312,6 +11312,9 @@ importers:
       '@deepseek-ai/cordis':
         specifier: ^4.0.1
         version: link:../../vendor/cordis
+      '@deepseek-ai/dsh-tools':
+        specifier: workspace:*
+        version: link:../../packages/core/tools
       '@playwright/mcp':
         specifier: ^0.0.79
         version: 0.0.79

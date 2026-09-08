@@ -36,6 +36,7 @@
     "install:deps": "npm install @playwright/mcp"
   },
   "dependencies": {
+    "@deepseek-ai/dsh-tools": "workspace:*",
     "@playwright/mcp": "^0.0.79"
   },
   "license": "MIT"
