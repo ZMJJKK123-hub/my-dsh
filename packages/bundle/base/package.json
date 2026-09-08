@@ -118,7 +118,6 @@
                          "@deepseek-ai/dsh-agent-instructions":  "workspace:^",
                          "@dsh-custom/dsh-change-monitor":  "workspace:^",
                          "@dsh-custom/dsh-tool-input":  "workspace:^",
-                         "@dsh-custom/dsh-tool-browser":  "workspace:^",
                          "@dsh-custom/dsh-tool-screenshot":  "workspace:^"
                      },
     "peerDependencies":  {

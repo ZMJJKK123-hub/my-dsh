@@ -183,7 +183,6 @@
                             "typescript":  "^6.0.3",
                             "vite-tsconfig-paths":  "^6.1.1",
                             "vitest":  "^4.1.8",
-                            "@dsh-custom/dsh-tool-browser":  "workspace:^",
                             "@dsh-custom/dsh-tool-input":  "workspace:^",
                             "@dsh-custom/dsh-client-ui-turn-sounds":  "workspace:^",
                             "@dsh-custom/dsh-client-ui-background":  "workspace:^",

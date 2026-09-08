@@ -221,14 +221,14 @@
     - id: change-monitor
       name: '@dsh-custom/dsh-change-monitor'
 
-    - id: tool-browser
-      name: '@dsh-custom/dsh-tool-browser'
-
     - id: tool-screenshot
       name: '@dsh-custom/dsh-tool-screenshot'
 
     - id: tool-input
       name: '@dsh-custom/dsh-tool-input'
+
+    - id: browser-control
+      name: dsh-browser-control
 
     - id: fs-observation-policy
       name: '@deepseek-ai/dsh-fs-observation-policy'

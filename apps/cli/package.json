@@ -82,7 +82,6 @@
                          "@deepseek-ai/cordis":  "workspace:^",
                          "js-yaml":  "^4.2.0",
                          "node-addon-require-builtin":  "^0.1.4",
-                         "@dsh-custom/dsh-tool-browser":  "workspace:^",
                          "@dsh-custom/dsh-tool-input":  "workspace:^",
                          "@dsh-custom/dsh-client-ui-turn-sounds":  "workspace:^",
                          "@dsh-custom/dsh-client-ui-background":  "workspace:^",
@@ -91,7 +90,8 @@
                          "@dsh-custom/dsh-change-monitor":  "workspace:^",
                          "@dsh-custom/dsh-tool-screenshot":  "workspace:^",
                          "@dsh-external/dsh-super-injector":  "workspace:*",
-                         "@dsh-external/dsh-client-ui-skin-maid-atelier":  "workspace:*"
+                         "@dsh-external/dsh-client-ui-skin-maid-atelier":  "workspace:*",
+                         "dsh-browser-control":  "workspace:*"
                      },
     "devDependencies":  {
                             "@deepseek-ai/dsh-agent":  "workspace:^",

@@ -36,9 +36,6 @@ importers:
       '@dsh-custom/dsh-client-ui-voice-input':
         specifier: workspace:^
         version: link:packages/client/ui-voice-input
-      '@dsh-custom/dsh-tool-browser':
-        specifier: workspace:^
-        version: link:packages/web/tool-browser
       '@dsh-custom/dsh-tool-input':
         specifier: workspace:^
         version: link:packages/shell/tool-input
@@ -342,9 +339,6 @@ importers:
       '@dsh-custom/dsh-client-ui-voice-input':
         specifier: workspace:^
         version: link:../../packages/client/ui-voice-input
-      '@dsh-custom/dsh-tool-browser':
-        specifier: workspace:^
-        version: link:../../packages/web/tool-browser
       '@dsh-custom/dsh-tool-input':
         specifier: workspace:^
         version: link:../../packages/shell/tool-input
@@ -360,6 +354,9 @@ importers:
       commander:
         specifier: ^15.0.0
         version: 15.0.0
+      dsh-browser-control:
+        specifier: workspace:*
+        version: link:../../third-party/dsh-browser-control
       js-yaml:
         specifier: ^4.2.0
         version: 4.2.0
@@ -1285,9 +1282,6 @@ importers:
       '@dsh-custom/dsh-change-monitor':
         specifier: workspace:^
         version: link:../../session/change-monitor
-      '@dsh-custom/dsh-tool-browser':
-        specifier: workspace:^
-        version: link:../../web/tool-browser
       '@dsh-custom/dsh-tool-input':
         specifier: workspace:^
         version: link:../../shell/tool-input
@@ -8582,24 +8576,6 @@ importers:
         specifier: workspace:^
         version: link:../../runtime-diagnostics/invariants
 
-  packages/web/tool-browser:
-    devDependencies:
-      '@deepseek-ai/cordis':
-        specifier: '*'
-        version: link:../../../vendor/cordis
-      '@deepseek-ai/dsh-agent':
-        specifier: '*'
-        version: link:../../core/agent
-      '@deepseek-ai/dsh-invariants':
-        specifier: '*'
-        version: link:../../runtime-diagnostics/invariants
-      '@deepseek-ai/dsh-loader-smoke':
-        specifier: '*'
-        version: link:../../test-support/loader-smoke
-      '@deepseek-ai/dsh-tools':
-        specifier: '*'
-        version: link:../../core/tools
-
   packages/web/tool-web:
     dependencies:
       '@deepseek-ai/schemastery':
@@ -9299,6 +9275,15 @@ importers:
       '@deepseek-ai/schemastery':
         specifier: link:../../vendor/schemastery
         version: link:../../vendor/schemastery
+
+  third-party/dsh-browser-control:
+    dependencies:
+      '@deepseek-ai/cordis':
+        specifier: ^4.0.1
+        version: link:../../vendor/cordis
+      '@playwright/mcp':
+        specifier: ^0.0.79
+        version: 0.0.79
 
   third-party/maid-atelier:
     devDependencies:
@@ -11355,6 +11340,11 @@ packages:
   '@pkgjs/parseargs@0.11.0':
     resolution: {integrity: sha512-+1VkjdD0QBLPodGrJUeqarH8VAIvQODIbwh9XpP5Syisf7YoQgsJKPNFoqqLQlu+VQ/tVSshMR6loPMn8U+dPg==}
     engines: {node: '>=14'}
+
+  '@playwright/mcp@0.0.79':
+    resolution: {integrity: sha512-VpqD4a3vFyGQMY9sh3UJiO6wjcurggkljKfAyCHL0QWGY5m6Ehr3MNsAAHPDHO//n13g0PCjpHatAOiulrqdZQ==}
+    engines: {node: '>=18'}
+    hasBin: true
 
   '@protobufjs/aspromise@1.1.2':
     resolution: {integrity: sha512-j+gKExEuLmKwvz3OgROXtrJ2UG2x8Ch2YZUxahh+s1F2HZ+wAceUNLkvy6zKCPVRkU++ZWQrdxsUeQXmcg4uoQ==}
@@ -14384,9 +14374,19 @@ packages:
     engines: {node: '>=18'}
     hasBin: true
 
+  playwright-core@1.63.0-alpha-2026-08-05:
+    resolution: {integrity: sha512-YussvUybTfBtyYbGXWh43f+5kNP03wg98M6mu4DphYET7PSbNVajsdLGjWE1xrsjqOw32i2wFlRP7U5mcOpMZg==}
+    engines: {node: '>=20'}
+    hasBin: true
+
   playwright@1.61.1:
     resolution: {integrity: sha512-DWnY5o3YbLWK4GovuAVwpqL+1VwGNdUGrRr++8j8PtQQzvAVZUIMjKQ90fY689sEJZJBbZVw1rXaOKSTitkzPQ==}
     engines: {node: '>=18'}
+    hasBin: true
+
+  playwright@1.63.0-alpha-2026-08-05:
+    resolution: {integrity: sha512-zbGZUK+JYkoDV3cUgfvh2czTBJL34Gmz5gHVI25xiIpvYSR17Q1M7TS8hnwECUe+IkKaeXbKrSyJTyogm2DVWw==}
+    engines: {node: '>=20'}
     hasBin: true
 
   points-on-curve@0.2.0:
@@ -17024,6 +17024,11 @@ snapshots:
 
   '@pkgjs/parseargs@0.11.0':
     optional: true
+
+  '@playwright/mcp@0.0.79':
+    dependencies:
+      playwright: 1.63.0-alpha-2026-08-05
+      playwright-core: 1.63.0-alpha-2026-08-05
 
   '@protobufjs/aspromise@1.1.2': {}
 
@@ -20192,9 +20197,17 @@ snapshots:
 
   playwright-core@1.61.1: {}
 
+  playwright-core@1.63.0-alpha-2026-08-05: {}
+
   playwright@1.61.1:
     dependencies:
       playwright-core: 1.61.1
+    optionalDependencies:
+      fsevents: 2.3.2
+
+  playwright@1.63.0-alpha-2026-08-05:
+    dependencies:
+      playwright-core: 1.63.0-alpha-2026-08-05
     optionalDependencies:
       fsevents: 2.3.2
 

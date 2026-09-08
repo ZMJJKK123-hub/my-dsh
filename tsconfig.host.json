@@ -307,7 +307,6 @@
     { "path": "./packages/lsp/tool-lsp" },
     { "path": "./apps/cli" },
     { "path": "./packages/session/change-monitor" },
-    { "path": "./packages/web/tool-browser" },
     { "path": "./packages/shell/tool-screenshot" },
     { "path": "./packages/shell/tool-input" }
   ]
