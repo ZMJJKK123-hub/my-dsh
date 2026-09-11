@@ -35,6 +35,7 @@ return {
     let started = null
     let seq = 0
     let buf = ''
+    let stderrTail = ''
     let queueTail = Promise.resolve()
     const pending = new Map()
 
@@ -206,6 +207,9 @@ return {
       if (state.status !== 'error') { state.status = 'stopped'; state.lastError = '浏览器服务退出: ' + reason }
       handle = null
       started = null
+      // 子进程死亡后，所有在途请求立刻失败，避免调用方挂死。
+      for (const p of pending.values()) { try { p.reject(new Error('浏览器服务退出: ' + reason)) } catch (e) {} }
+      pending.clear()
     }
     async function ensureStarted() {
       if (started) return started
@@ -226,7 +230,14 @@ return {
           handle = h
           h.stdout.setEncoding('utf8')
           h.stdout.on('data', onData)
-          if (h.stderr) { h.stderr.setEncoding('utf8'); h.stderr.on('data', () => {}) }
+          // EPIPE 防线：子进程退出后对其 stdin 的写入以异步 'error' 事件送达，
+          // 没有监听器会把整个宿主进程带崩。这里按子进程退出处理（优雅降级）。
+          h.stdin.on('error', (e) => { onExit('管道写入失败 ' + (e && e.code ? e.code : e), h) })
+          if (h.stderr) {
+            h.stderr.setEncoding('utf8')
+            // 保留 stderr 尾部，启动失败时能看到子进程的真实死因。
+            h.stderr.on('data', (c) => { stderrTail = (stderrTail + String(c)).slice(-2000) })
+          }
           h.done.then((o) => onExit('退出码 ' + o.exitCode, h), (e) => onExit(String(e), h))
           await withTimeout(request('initialize', { protocolVersion: PROTOCOL, capabilities: {}, clientInfo: { name: 'dsh-browser-control', version: '1.0.0' } }), 30000, 'initialize')
           notify('notifications/initialized', {})
@@ -267,7 +278,7 @@ return {
           }
         } catch (e) {
           state.status = 'error'
-          state.lastError = String(e)
+          state.lastError = String(e) + (stderrTail ? '\nstderr: ' + stderrTail.trim() : '')
           state.mcpReady = false
         }
       })()
