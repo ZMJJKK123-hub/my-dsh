@@ -114,4 +114,30 @@ describe('tool-git', () => {
     const result = await call(ctx, agent, 'git_log', { max_count: 1 })
     expect(result.isError).not.toBe(true)
   }, 30_000)
+
+  it('git_stage and git_commit flow through the tools', async () => {
+    writeFileSync(join(repo, 'tool-feature.txt'), 'tool feature\n')
+    const staged = await call(ctx, agent, 'git_stage', { paths: ['tool-feature.txt'] })
+    expect(staged.isError).not.toBe(true)
+    expect(text(staged)).toContain('tool-feature.txt')
+
+    const committed = await call(ctx, agent, 'git_commit', { message: 'add tool feature' })
+    expect(committed.isError).not.toBe(true)
+    expect(text(committed)).toContain('add tool feature')
+  }, 60_000)
+
+  it('git_stage without paths or all fails the call', async () => {
+    const result = await call(ctx, agent, 'git_stage', {})
+    expect(result.isError).toBe(true)
+    expect(text(result)).toContain('requires non-empty paths')
+  }, 30_000)
+
+  it('git_push targets a local bare remote', async () => {
+    await exec('git', ['init', '--bare', 'tool-remote.git'], { cwd: scratch })
+    await exec('git', ['remote', 'add', 'origin', join(scratch, 'tool-remote.git').replaceAll('\\', '/')], { cwd: repo })
+    await exec('git', ['config', 'protocol.file.allow', 'always'], { cwd: repo })
+    const pushed = await call(ctx, agent, 'git_push', { remote: 'origin', set_upstream: true })
+    expect(pushed.isError).not.toBe(true)
+    expect(text(pushed)).toContain('pushed main to origin')
+  }, 60_000)
 })

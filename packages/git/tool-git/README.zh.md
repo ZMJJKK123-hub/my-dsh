@@ -2,7 +2,7 @@
 
 [English](README.md) | 中文
 
-`ctx.git` 能力缝之上的模型工具：`git_status`、`git_diff`、`git_log`、`git_branch_list`。工具自身不做任何执行——从会话工作区（或显式 `workdir` 参数）解析工作目录，调用能力缝并渲染其类型化结果。
+`ctx.git` 能力缝之上的模型工具：`git_status`、`git_diff`、`git_log`、`git_branch_list`、`git_stage`、`git_unstage`、`git_commit`、`git_push`。工具自身不做任何执行——从会话工作区（或显式 `workdir` 参数）解析工作目录，调用能力缝并渲染其类型化结果。
 
 ## 工作方式
 
@@ -22,11 +22,11 @@
 
 #### 模型看到什么
 
-四个工具 schema（`git_status`、`git_diff`、`git_log`、`git_branch_list`）随本 bundle 行进入所有挂载它的 profile 的工具目录；参数形状见生成的[工具目录](../../../docs/tool-catalog.zh.md)。
+八个工具 schema（`git_status`、`git_diff`、`git_log`、`git_branch_list`、`git_stage`、`git_unstage`、`git_commit`、`git_push`）随本 bundle 行进入所有挂载它的 profile 的工具目录；参数形状见生成的[工具目录](../../../docs/tool-catalog.zh.md)。
 
 #### Token effect
 
-条件性：只要该行启用，四个 schema 即存在。
+条件性：只要该行启用，八个 schema 即存在。
 
 #### KV Cache effect
 
@@ -34,5 +34,6 @@ Append-only：schema 每次提示词组装一次，仅在本行配置或工具�
 
 ## Known Limitations and Deferred Work
 
-- 只读面：暂存、提交、推送与分支切换工具随写入缝提供，不在本包。
-- 不列出远端分支；`git_branch_list` 仅覆盖本地分支。
+- 变更工具（`git_stage`、`git_unstage`、`git_commit`、`git_push`）在只读权限预设下如实拒绝；工具内不做升级——请切换预设。
+- 无分支切换工具；`git_branch_list` 仅覆盖本地分支。
+- `git_commit` 要求模型自己撰写提交信息；宿主侧的 AI 信息生成属于 UI 面板，不属于工具。

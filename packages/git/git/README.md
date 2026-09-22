@@ -2,13 +2,14 @@
 
 English | [中文](README.zh.md)
 
-Service Definition for the `ctx.git` capability seam: read-only repository facts (root, status, diff, log, branches) shared by model-facing tools and UI panels. This package declares the interface and result types only; the local implementation lives in `@dsh-custom/dsh-git-local`.
+Service Definition for the `ctx.git` capability seam: repository facts (root, status, diff, log, branches) and index/commit/push mutations shared by model-facing tools and UI panels. This package declares the interface and result types only; the local implementation lives in `@dsh-custom/dsh-git-local`.
 
 ## How it works
 
-- Declares the abstract `GitService` (`ctx.git`): `resolveRoot`, `status`, `diff`, `log`, `branches`.
-- Every method takes the repository directory per call — the caller resolves the session workspace — and never writes to the repository.
-- Git failures reject with `GitError` (exit code, stderr, and a `denied` flag when a sandbox policy blocked the run).
+- Declares the abstract `GitService` (`ctx.git`): `resolveRoot`, `status`, `diff`, `log`, `branches` (facts) and `stage`, `unstage`, `commit`, `push` (mutations).
+- Every method takes the repository directory per call — the caller resolves the session workspace.
+- Fact methods never write. Mutation methods must enforce the caller's standing file policy: a read-only policy denies them with a `GitError` whose `denied` flag is set.
+- Git failures reject with `GitError` (exit code, stderr, and the `denied` flag when a sandbox policy blocked the run).
 
 ## Config
 
@@ -24,5 +25,5 @@ None.
 
 ## Known Limitations and Deferred Work
 
-- Read-only surface: staging, committing, pushing, and history rewriting belong to a later write seam, not this interface.
-- No remote branch listing; `branches` covers `refs/heads` only.
+- No history rewriting: `commit` creates a new commit only; amend, rebase, and revert belong to a later surface if ever needed.
+- `push` pushes the current branch; fetch/pull and remote branch management are not part of this seam.

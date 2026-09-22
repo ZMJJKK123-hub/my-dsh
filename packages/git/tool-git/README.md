@@ -2,7 +2,7 @@
 
 English | [中文](README.zh.md)
 
-Model-facing git tools over the `ctx.git` capability seam: `git_status`, `git_diff`, `git_log`, and `git_branch_list`. The tools add no execution of their own — they resolve the working directory from the session workspace (or an explicit `workdir` argument), call the seam, and render its typed results.
+Model-facing git tools over the `ctx.git` capability seam: `git_status`, `git_diff`, `git_log`, `git_branch_list`, `git_stage`, `git_unstage`, `git_commit`, and `git_push`. The tools add no execution of their own — they resolve the working directory from the session workspace (or an explicit `workdir` argument), call the seam, and render its typed results.
 
 ## How it works
 
@@ -22,11 +22,11 @@ Model-facing git tools over the `ctx.git` capability seam: `git_status`, `git_di
 
 #### What the model sees
 
-The four tool schemas (`git_status`, `git_diff`, `git_log`, `git_branch_list`) join the system prompt's tool catalog for every profile that mounts this bundle row; see the generated [tool catalog](../../../docs/tool-catalog.md) for the exact argument shapes.
+The eight tool schemas (`git_status`, `git_diff`, `git_log`, `git_branch_list`, `git_stage`, `git_unstage`, `git_commit`, `git_push`) join the system prompt's tool catalog for every profile that mounts this bundle row; see the generated [tool catalog](../../../docs/tool-catalog.md) for the exact argument shapes.
 
 #### Token effect
 
-Conditional: the four schemas are present whenever this row is enabled.
+Conditional: the eight schemas are present whenever this row is enabled.
 
 #### KV Cache effect
 
@@ -34,5 +34,6 @@ Append-only: the schemas are assembled once per prompt and change only when this
 
 ## Known Limitations and Deferred Work
 
-- Read-only surface: staging, committing, pushing, and checkout tools arrive with the write seam, not this package.
-- No remote branch listing; `git_branch_list` covers local branches only.
+- Mutation tools (`git_stage`, `git_unstage`, `git_commit`, `git_push`) deny honestly under a read-only permission preset; there is no in-tool escalation — switch the preset instead.
+- No checkout/branch-switch tool; `git_branch_list` covers local branches only.
+- `git_commit` requires the model to write the message; a host-side AI message generator belongs to the UI panel, not the tool.

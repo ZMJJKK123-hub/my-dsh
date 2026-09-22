@@ -1,22 +1,27 @@
 /**
- * Service Definition for the `ctx.git` capability seam: read-only repository
- * facts (status, diff, log, branches) shared by model-facing tools and UI
- * panels. All methods take the repository directory per call — the caller
- * resolves the session workspace — and never write to the repository.
+ * Service Definition for the `ctx.git` capability seam: repository facts
+ * (status, diff, log, branches) and index/commit/push mutations shared by
+ * model-facing tools and UI panels. Read methods take the repository
+ * directory per call — the caller resolves the session workspace — and never
+ * write to the repository; write methods (stage, unstage, commit, push) run
+ * under the caller's standing sandbox policy and deny honestly under a
+ * read-only mode.
  *
  * @module @dsh-custom/dsh-git
  */
 
 import { Context, Service } from '@deepseek-ai/cordis'
 import type {
-  GitBranchListResult, GitDiffOptions, GitDiffResult, GitLogOptions, GitLogResult,
-  GitStatusSummary,
+  GitBranchListResult, GitCommitOptions, GitCommitResult, GitDiffOptions, GitDiffResult,
+  GitLogOptions, GitLogResult, GitPushOptions, GitPushResult, GitStageResult,
+  GitStageSelection, GitStatusSummary,
 } from './types.ts'
 
 export { GitError } from './types.ts'
 export type {
-  GitBranch, GitBranchListResult, GitDiffOptions, GitDiffResult, GitLogEntry, GitLogOptions,
-  GitLogResult, GitStatusEntry, GitStatusSummary,
+  GitBranch, GitBranchListResult, GitCommitOptions, GitCommitResult, GitDiffOptions,
+  GitDiffResult, GitLogEntry, GitLogOptions, GitLogResult, GitPushOptions, GitPushResult,
+  GitStageResult, GitStageSelection, GitStatusEntry, GitStatusSummary,
 } from './types.ts'
 
 declare module '@deepseek-ai/cordis' {
@@ -26,14 +31,18 @@ declare module '@deepseek-ai/cordis' {
 }
 
 /**
- * Abstract git repository reader. Subclass, implement the abstract methods,
+ * Abstract git repository service. Subclass, implement the abstract methods,
  * and load the subclass as a plugin — it registers as `ctx.git` (one
  * implementation per context; loading a second throws, which is cordis'
  * standard duplicate-service behavior).
  *
  * Implementations must honor these semantics:
- * - Every method reads; none of them creates commits, touches the index, or
- *   changes HEAD. A provider that adds writes belongs on a separate seam.
+ * - The fact methods (root/status/diff/log/branches) only read; they create
+ *   no commits, touch no index, and move no HEAD.
+ * - The mutation methods (stage/unstage/commit/push) change the index, the
+ *   commit graph, or the remote, and must enforce the caller's standing file
+ *   policy: a read-only policy denies them with a {@link GitError} whose
+ *   `denied` flag is set.
  * - Methods reject with {@link GitError} when git itself fails (nonzero exit,
  *   bad revision); infrastructure failures (spawn failure) reject with the
  *   underlying error. A directory outside any repository makes
@@ -92,6 +101,47 @@ export abstract class GitService extends Service {
    * @throws {@link GitError} when git fails.
    */
   abstract branches(cwd: string, signal?: AbortSignal): Promise<GitBranchListResult>
+
+  /**
+   * Stage work-tree changes (including untracked files) into the index.
+   * @param cwd - any directory inside the repository.
+   * @param options - explicit paths or the whole work tree.
+   * @param signal - aborts the run.
+   * @returns the cumulative staged paths after the operation.
+   * @throws {@link GitError} when git fails or a read-only policy denies the write.
+   */
+  abstract stage(cwd: string, options?: GitStageSelection, signal?: AbortSignal): Promise<GitStageResult>
+
+  /**
+   * Unstage indexed changes back into the work tree (the index entry returns
+   * to HEAD, the file content is untouched).
+   * @param cwd - any directory inside the repository.
+   * @param options - explicit paths or the whole index.
+   * @param signal - aborts the run.
+   * @returns the cumulative staged paths after the operation.
+   * @throws {@link GitError} when git fails or a read-only policy denies the write.
+   */
+  abstract unstage(cwd: string, options?: GitStageSelection, signal?: AbortSignal): Promise<GitStageResult>
+
+  /**
+   * Create one commit from the staged index.
+   * @param cwd - any directory inside the repository.
+   * @param options - the commit message (non-empty; first line is the subject).
+   * @param signal - aborts the run.
+   * @returns the created commit's hash and subject.
+   * @throws {@link GitError} when there is nothing staged, git fails, or a read-only policy denies the write.
+   */
+  abstract commit(cwd: string, options: GitCommitOptions, signal?: AbortSignal): Promise<GitCommitResult>
+
+  /**
+   * Push the current (or given) branch to a remote.
+   * @param cwd - any directory inside the repository.
+   * @param options - optional remote, branch, and upstream setup.
+   * @param signal - aborts the run.
+   * @returns the remote and branch the push targeted.
+   * @throws {@link GitError} when there is no upstream, the remote rejects, or a policy denies the write.
+   */
+  abstract push(cwd: string, options?: GitPushOptions, signal?: AbortSignal): Promise<GitPushResult>
 }
 
 export default GitService

@@ -9,7 +9,6 @@ import LocalSubprocessRuntime from '@deepseek-ai/dsh-subprocess-local'
 import LocalGitService from '@dsh-custom/dsh-git-local'
 import { GitError } from '@dsh-custom/dsh-git'
 import { parseBranches, parseLog, parseStatusZ } from '../src/parse.ts'
-
 const exec = promisify(execFile)
 
 /** Run setup git in a fixture repo (identity inline; nothing to configure). */
@@ -156,5 +155,40 @@ describe('LocalGitService', () => {
     expect(onlyHello.patch).not.toContain('other.txt')
     const capped = await ctx.git.diff(repo, { maxBytes: 4_096 })
     expect(typeof capped.patch).toBe('string')
+  }, 60_000)
+
+  it('stage and unstage move index entries and report cumulative staged paths', async () => {
+    writeFileSync(join(repo, 'feature.txt'), 'feature\n')
+    const staged = await ctx.git.stage(repo, { paths: ['feature.txt'] })
+    expect(staged.stagedPaths).toContain('feature.txt')
+    const status = await ctx.git.status(repo)
+    expect(status.entries.some(entry => entry.path === 'feature.txt' && entry.staged)).toBe(true)
+
+    const unstaged = await ctx.git.unstage(repo, { paths: ['feature.txt'] })
+    expect(unstaged.stagedPaths).not.toContain('feature.txt')
+    await expect(ctx.git.stage(repo, {})).rejects.toBeInstanceOf(GitError)
+  }, 60_000)
+
+  it('commit creates a commit and reports its hash and subject', async () => {
+    await ctx.git.stage(repo, { all: true })
+    const commit = await ctx.git.commit(repo, { message: 'add feature\n\nlonger body' })
+    expect(commit.subject).toBe('add feature')
+    expect(commit.shortHash).toMatch(/^[0-9a-f]+$/)
+    const log = await ctx.git.log(repo)
+    expect(log.entries[0]?.subject).toBe('add feature')
+    await expect(ctx.git.commit(repo, { message: '   ' })).rejects.toBeInstanceOf(GitError)
+    await expect(ctx.git.commit(repo, { message: 'nothing staged ideally' })).rejects.toBeInstanceOf(GitError)
+  }, 60_000)
+
+  it('push sends the branch to a local bare remote and sets upstream', async () => {
+    const remotePath = join(scratch, 'remote.git')
+    await exec('git', ['init', '--bare', 'remote.git'], { cwd: scratch })
+    await exec('git', ['remote', 'add', 'origin', remotePath.replaceAll('\\', '/')], { cwd: repo })
+    await exec('git', ['config', 'protocol.file.allow', 'always'], { cwd: repo })
+    const pushed = await ctx.git.push(repo, { remote: 'origin', setUpstream: true })
+    expect(pushed.remote).toBe('origin')
+    expect(pushed.branch).toBe('main')
+    const status = await ctx.git.status(repo)
+    expect(status.upstream).toBe('origin/main')
   }, 60_000)
 })

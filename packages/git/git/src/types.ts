@@ -112,6 +112,56 @@ export interface GitBranchListResult {
   readonly branches: readonly GitBranch[]
 }
 
+/** Selection of what one staging pass covers: explicit paths or the whole work tree. */
+export interface GitStageSelection {
+  /** Repository-relative paths to stage/unstage; required unless `all` is true. */
+  readonly paths?: readonly string[] | undefined
+  /** Stage/unstage every change in the work tree, including untracked files. */
+  readonly all?: boolean | undefined
+}
+
+/** Result of one {@link GitService.stage} or {@link GitService.unstage} run. */
+export interface GitStageResult {
+  /** Cumulative staged paths after the operation, in git's order. */
+  readonly stagedPaths: readonly string[]
+}
+
+/** Options of {@link GitService.commit}. */
+export interface GitCommitOptions {
+  /** Commit message; non-empty, and its first line becomes the subject. */
+  readonly message: string
+}
+
+/** Result of one {@link GitService.commit} run. */
+export interface GitCommitResult {
+  /** Full hash of the created commit. */
+  readonly hash: string
+  /** Abbreviated hash of the created commit. */
+  readonly shortHash: string
+  /** Subject line of the created commit. */
+  readonly subject: string
+}
+
+/** Options of {@link GitService.push}. */
+export interface GitPushOptions {
+  /** Remote to push to; defaults to the branch's tracking remote (`git push` semantics). */
+  readonly remote?: string | undefined
+  /** Branch to push; defaults to the current branch when a remote is given. */
+  readonly branch?: string | undefined
+  /** Set the branch's upstream to `remote/branch` while pushing. */
+  readonly setUpstream?: boolean | undefined
+}
+
+/** Result of one {@link GitService.push} run. */
+export interface GitPushResult {
+  /** The remote the push targeted. */
+  readonly remote: string
+  /** The branch that was pushed. */
+  readonly branch: string
+  /** Whether this push set the branch's upstream. */
+  readonly setUpstream: boolean
+}
+
 /**
  * A git command failed. Carries the raw exit code and stderr so consumers can
  * surface the honest cause; `denied` marks a run the sandbox blocked before

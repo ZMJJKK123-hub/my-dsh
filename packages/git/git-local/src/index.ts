@@ -1,12 +1,13 @@
 /**
  * Local Service Provider for the git capability seam over the subprocess
- * seam: read-only git facts (root/status/diff/log/branches) from the git
- * executable on this host's PATH. Every command runs argv-direct through
- * `ctx.subprocess` — never through a shell — and is confined by
- * `ctx.sandbox` under the standing policy resolved from `ctx.sandboxPolicy`
- * (falling back to unconfined only when the host mounted no sandbox or the
- * standing mode is full access). Write operations (stage/commit/push) do not
- * belong here; a later seam owns them.
+ * seam: repository facts (root/status/diff/log/branches) and index/commit/push
+ * mutations from the git executable on this host's PATH. Every command runs
+ * argv-direct through `ctx.subprocess` — never through a shell — and is
+ * confined by `ctx.sandbox` under the standing policy resolved from
+ * `ctx.sandboxPolicy` (falling back to unconfined only when the host mounted
+ * no sandbox or the standing mode is full access). Mutations run at the
+ * repository root with the repository as the writable root, so a read-only
+ * standing policy denies them honestly.
  *
  * @module @dsh-custom/dsh-git-local
  */
@@ -17,7 +18,10 @@ import type { SandboxPolicy, SandboxProvider } from '@deepseek-ai/dsh-sandbox'
 import type {} from '@deepseek-ai/dsh-sandbox-policy'
 import type {} from '@deepseek-ai/dsh-subprocess'
 import { GitError, GitService } from '@dsh-custom/dsh-git'
-import type { GitDiffOptions, GitLogOptions } from '@dsh-custom/dsh-git'
+import type {
+  GitCommitOptions, GitCommitResult, GitDiffOptions, GitLogOptions, GitPushOptions,
+  GitPushResult, GitStageResult, GitStageSelection,
+} from '@dsh-custom/dsh-git'
 import { parseBranches, parseLog, parseStatusZ } from './parse.ts'
 import { runGitCommand, type GitRunResult } from './run.ts'
 
@@ -94,7 +98,7 @@ export class LocalGitService extends GitService {
    * Confinement for one call: the standing policy's mode with the call's own
    * repository as the writable root, skipped when disabled, unmounted, or the
    * standing mode is full access.
-   * @param cwd - the repository directory this call reads.
+   * @param cwd - the repository directory this call reads or writes.
    */
   private confinement(cwd: string): { provider: SandboxProvider; policy: SandboxPolicy } | undefined {
     if (!this.resolvedConfig.confine) return undefined
@@ -195,6 +199,100 @@ export class LocalGitService extends GitService {
     )
     if (result.exitCode !== 0 || result.timedOut || result.aborted) failRun('for-each-ref', result)
     return { branches: parseBranches(result.stdout) }
+  }
+
+  /**
+   * Run one repository-mutating git command at the repository root: the same
+   * standing-policy confinement as reads, with the repository itself as the
+   * writable root, so a read-only policy denies the mutation honestly while
+   * a workspace-write policy confines writes to the repository.
+   */
+  private async write(cwd: string, argv: readonly string[], signal?: AbortSignal): Promise<void> {
+    const root = await this.resolveRoot(cwd, signal)
+    if (root === undefined) throw new GitError(`not a git repository: ${cwd}`, 128, '')
+    const gitPath = await this.executable(signal)
+    const result = await runGitCommand(this.ctx, gitPath, {
+      argv: ['-c', 'core.quotepath=false', ...argv],
+      cwd: root,
+      timeoutMs: this.resolvedConfig.timeoutMs,
+      maxOutputBytes: this.resolvedConfig.maxOutputBytes,
+      graceMs: this.resolvedConfig.graceMs,
+      signal,
+      sandbox: this.confinement(root),
+    })
+    if (result.exitCode !== 0 || result.timedOut || result.aborted) failRun(argv[0] ?? 'git', result)
+  }
+
+  /** The cumulative staged path list after a staging mutation. */
+  private async stagedPaths(cwd: string, signal?: AbortSignal): Promise<readonly string[]> {
+    const result = await this.read(
+      cwd,
+      ['diff', '--cached', '--name-only', '-z'],
+      this.resolvedConfig.maxOutputBytes,
+      signal,
+    )
+    if (result.exitCode !== 0 || result.timedOut || result.aborted) failRun('diff', result)
+    return result.stdout.split('\0').filter(path => path !== '')
+  }
+
+  /** Build the argv of one stage/unstage pass: explicit paths, or the whole work tree. */
+  private static stageArgv(verb: 'add' | 'unstage', options?: GitStageSelection): readonly string[] {
+    const all = options?.all === true
+    const paths = options?.paths?.filter(path => path.trim() !== '') ?? []
+    if (!all && paths.length === 0) {
+      throw new GitError(`git ${verb} requires non-empty paths or all: true`, null, '')
+    }
+    if (verb === 'add') return all ? ['add', '--all'] : ['add', '--', ...paths]
+    return all ? ['reset', '--quiet'] : ['restore', '--staged', '--', ...paths]
+  }
+
+  override async stage(cwd: string, options?: GitStageSelection, signal?: AbortSignal): Promise<GitStageResult> {
+    await this.write(cwd, LocalGitService.stageArgv('add', options), signal)
+    return { stagedPaths: await this.stagedPaths(cwd, signal) }
+  }
+
+  override async unstage(cwd: string, options?: GitStageSelection, signal?: AbortSignal): Promise<GitStageResult> {
+    await this.write(cwd, LocalGitService.stageArgv('unstage', options), signal)
+    return { stagedPaths: await this.stagedPaths(cwd, signal) }
+  }
+
+  override async commit(cwd: string, options: GitCommitOptions, signal?: AbortSignal): Promise<GitCommitResult> {
+    const message = options.message.trim()
+    if (message === '') {
+      throw new GitError('git commit requires a non-empty message', null, '')
+    }
+    await this.write(cwd, ['commit', '-m', message], signal)
+    const result = await this.read(
+      cwd,
+      ['log', '--max-count', '1', `--format=${LOG_FORMAT}`],
+      this.resolvedConfig.maxOutputBytes,
+      signal,
+    )
+    if (result.exitCode !== 0 || result.timedOut || result.aborted) failRun('log', result)
+    const entry = parseLog(result.stdout)[0]
+    if (entry === undefined) throw new GitError('git commit succeeded but the new commit is not readable', null, '')
+    return { hash: entry.hash, shortHash: entry.shortHash, subject: entry.subject }
+  }
+
+  override async push(cwd: string, options?: GitPushOptions, signal?: AbortSignal): Promise<GitPushResult> {
+    const setUpstream = options?.setUpstream === true
+    const remote = options?.remote === '' ? undefined : options?.remote
+    const branch = options?.branch === '' ? undefined : options?.branch
+    const summary = await this.status(cwd, signal)
+    const argv: string[] = ['push', ...setUpstream ? ['--set-upstream'] : []]
+    if (remote !== undefined) {
+      const effectiveBranch = branch ?? summary.branch
+      if (effectiveBranch === undefined) {
+        throw new GitError('git push with an explicit remote needs a branch name on a detached HEAD', null, '')
+      }
+      argv.push(remote, effectiveBranch)
+    }
+    await this.write(cwd, argv, signal)
+    return {
+      remote: remote ?? (summary.upstream !== undefined ? summary.upstream.split('/')[0] ?? 'origin' : 'origin'),
+      branch: branch ?? summary.branch ?? 'HEAD',
+      setUpstream,
+    }
   }
 }
 

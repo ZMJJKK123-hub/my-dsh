@@ -2,14 +2,14 @@
 
 English | [中文](README.zh.md)
 
-Local Service Provider for the `ctx.git` capability seam: runs read-only git commands (root/status/diff/log/branches) through `ctx.subprocess` with argv-direct spawning — never through a shell — confined by `ctx.sandbox` under the standing policy from `ctx.sandboxPolicy`.
+Local Service Provider for the `ctx.git` capability seam: repository facts and index/commit/push mutations from the git executable on this host's PATH, running argv-direct through `ctx.subprocess` — never through a shell — confined by `ctx.sandbox` under the standing policy from `ctx.sandboxPolicy`.
 
 ## How it works
 
 - Registers `LocalGitService` as `ctx.git` (one implementation per context).
 - Every command runs as an explicit argv through the subprocess seam, so arguments need no shell quoting.
-- Confinement: the standing policy's mode with the call's repository as the writable root. `confine: false`, an unmounted sandbox, or a full-access standing mode runs unconfined.
-- `GIT_OPTIONAL_LOCKS=0` is set on every run so read commands take no opportunistic index locks and survive read-only confinement.
+- Fact commands run with `GIT_OPTIONAL_LOCKS=0`, so reads take no opportunistic index locks and survive read-only confinement.
+- Mutations (stage/unstage/commit/push) run at the repository root with the repository as the writable root: a read-only standing policy denies them honestly (`GitError` with `denied`), a workspace-write policy confines writes to the repository, and full access runs unconfined. Repository git hooks run as usual on commit.
 - Output formats are NUL/US/RS-delimited (`--porcelain=v1 -z`, custom `--format` separators), parsed by pure functions in `src/parse.ts`.
 
 ## Config
@@ -34,3 +34,4 @@ None.
 
 - An unborn branch's `log` resolves with an empty entry list; a bad revision still rejects with `GitError`.
 - `diff` keeps the output tail when the byte cap overflows and reports `truncated`; the dropped head is not recoverable through this seam.
+- `unstage` with `all: true` uses `git reset --quiet`, which requires a resolvable HEAD; on an unborn branch it rejects honestly instead of falling back.
