@@ -50,6 +50,7 @@ export abstract class GitService extends Service {
    * when the directory is not inside a git repository.
    * @param cwd - any directory inside the candidate repository.
    * @param signal - aborts the lookup.
+   * @returns the absolute repository root, or `undefined` outside any repository.
    */
   abstract resolveRoot(cwd: string, signal?: AbortSignal): Promise<string | undefined>
 
@@ -57,6 +58,7 @@ export abstract class GitService extends Service {
    * Working-tree and index status of the repository containing `cwd`.
    * @param cwd - any directory inside the repository.
    * @param signal - aborts the run.
+   * @returns the branch header facts and every reported entry.
    * @throws {@link GitError} when `cwd` is not inside a repository.
    */
   abstract status(cwd: string, signal?: AbortSignal): Promise<GitStatusSummary>
@@ -66,6 +68,7 @@ export abstract class GitService extends Service {
    * @param cwd - any directory inside the repository.
    * @param options - staged/worktree selection, optional path filter, byte cap.
    * @param signal - aborts the run.
+   * @returns the unified diff patch, possibly truncated at the byte cap.
    * @throws {@link GitError} when git fails.
    */
   abstract diff(cwd: string, options?: GitDiffOptions, signal?: AbortSignal): Promise<GitDiffResult>
@@ -76,6 +79,7 @@ export abstract class GitService extends Service {
    * @param cwd - any directory inside the repository.
    * @param options - count bound, optional starting revision and path filter.
    * @param signal - aborts the run.
+   * @returns the commits, newest first; an empty list on an unborn branch.
    * @throws {@link GitError} when git fails for a reason other than an unborn branch.
    */
   abstract log(cwd: string, options?: GitLogOptions, signal?: AbortSignal): Promise<GitLogResult>
@@ -84,6 +88,7 @@ export abstract class GitService extends Service {
    * Local branches of the repository containing `cwd`.
    * @param cwd - any directory inside the repository.
    * @param signal - aborts the run.
+   * @returns the local branches with the current branch marked.
    * @throws {@link GitError} when git fails.
    */
   abstract branches(cwd: string, signal?: AbortSignal): Promise<GitBranchListResult>

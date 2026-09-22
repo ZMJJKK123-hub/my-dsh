@@ -1608,6 +1608,9 @@ importers:
       '@dsh-custom/dsh-git-local':
         specifier: workspace:^
         version: link:../../git/git-local
+      '@dsh-custom/dsh-tool-git':
+        specifier: workspace:^
+        version: link:../../git/tool-git
       '@dsh-custom/dsh-tool-input':
         specifier: workspace:^
         version: link:../../shell/tool-input
@@ -6354,6 +6357,40 @@ importers:
       '@dsh-custom/dsh-git':
         specifier: workspace:*
         version: link:../git
+
+  packages/git/tool-git:
+    dependencies:
+      '@deepseek-ai/schemastery':
+        specifier: link:../../../vendor/schemastery
+        version: link:../../../vendor/schemastery
+    devDependencies:
+      '@deepseek-ai/cordis':
+        specifier: workspace:*
+        version: link:../../../vendor/cordis
+      '@deepseek-ai/dsh-agent':
+        specifier: workspace:*
+        version: link:../../core/agent
+      '@deepseek-ai/dsh-llm':
+        specifier: workspace:*
+        version: link:../../llm/llm
+      '@deepseek-ai/dsh-session':
+        specifier: workspace:*
+        version: link:../../core/session
+      '@deepseek-ai/dsh-subprocess-local':
+        specifier: workspace:*
+        version: link:../../subprocess/subprocess-local
+      '@deepseek-ai/dsh-system-prompt':
+        specifier: workspace:*
+        version: link:../../core/system-prompt
+      '@deepseek-ai/dsh-tools':
+        specifier: workspace:*
+        version: link:../../core/tools
+      '@dsh-custom/dsh-git':
+        specifier: workspace:*
+        version: link:../git
+      '@dsh-custom/dsh-git-local':
+        specifier: workspace:*
+        version: link:../git-local
 
   packages/goal/command-goal:
     devDependencies:

@@ -260,6 +260,9 @@
     - id: git-local
       name: '@dsh-custom/dsh-git-local'
 
+    - id: tool-git
+      name: '@dsh-custom/dsh-tool-git'
+
     - id: tool-screenshot
       name: '@dsh-custom/dsh-tool-screenshot'
 

@@ -30,6 +30,7 @@
     "paths": {
       "@dsh-custom/dsh-git": ["./packages/git/git/src"],
       "@dsh-custom/dsh-git-local": ["./packages/git/git-local/src"],
+      "@dsh-custom/dsh-tool-git": ["./packages/git/tool-git/src"],
       "@deepseek-ai/cordis": ["./vendor/cordis/src"],
       "@deepseek-ai/cosmokit": ["./vendor/cosmokit/src"],
       "@deepseek-ai/schemastery": ["./vendor/schemastery/src"],
