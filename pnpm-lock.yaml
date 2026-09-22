@@ -1602,6 +1602,9 @@ importers:
       '@dsh-custom/dsh-automations':
         specifier: workspace:^
         version: link:../../schedule/automations
+      '@dsh-custom/dsh-automations-remote':
+        specifier: workspace:^
+        version: link:../../schedule/automations-remote
       '@dsh-custom/dsh-change-monitor':
         specifier: workspace:^
         version: link:../../session/change-monitor
@@ -2032,6 +2035,9 @@ importers:
       '@deepseek-ai/schemastery':
         specifier: link:../../../vendor/schemastery
         version: link:../../../vendor/schemastery
+      '@dsh-custom/dsh-client-ui-automations':
+        specifier: workspace:^
+        version: link:../../client/ui-automations
       '@dsh-custom/dsh-client-ui-background':
         specifier: workspace:^
         version: link:../../client/ui-background
@@ -2420,6 +2426,55 @@ importers:
       react-dom:
         specifier: ^18.2.0
         version: 18.3.1(react@18.3.1)
+
+  packages/client/ui-automations:
+    dependencies:
+      clsx:
+        specifier: ^2.0.0
+        version: 2.1.1
+      react:
+        specifier: ^18.2.0
+        version: 18.3.1
+      react-dom:
+        specifier: ^18.2.0
+        version: 18.3.1(react@18.3.1)
+    devDependencies:
+      '@deepseek-ai/cordis':
+        specifier: workspace:*
+        version: link:../../../vendor/cordis
+      '@deepseek-ai/dsh-client-locale':
+        specifier: workspace:*
+        version: link:../locale
+      '@deepseek-ai/dsh-client-store':
+        specifier: workspace:*
+        version: link:../store
+      '@deepseek-ai/dsh-client-ui-dockkit':
+        specifier: workspace:*
+        version: link:../ui-dockkit
+      '@deepseek-ai/dsh-client-ui-primitives':
+        specifier: workspace:*
+        version: link:../ui-primitives
+      '@deepseek-ai/dsh-client-ui-renderer':
+        specifier: workspace:*
+        version: link:../ui-renderer
+      '@deepseek-ai/dsh-client-ui-sidebar-right':
+        specifier: workspace:*
+        version: link:../ui-sidebar-right
+      '@deepseek-ai/dsh-client-ui-slots':
+        specifier: workspace:*
+        version: link:../ui-slots
+      '@deepseek-ai/dsh-typert-protocol':
+        specifier: workspace:^
+        version: link:../../typert/protocol
+      '@dsh-custom/dsh-automations-remote':
+        specifier: workspace:*
+        version: link:../../schedule/automations-remote
+      '@types/react':
+        specifier: ~18.3.1
+        version: 18.3.31
+      '@types/react-dom':
+        specifier: ~18.3.0
+        version: 18.3.7(@types/react@18.3.31)
 
   packages/client/ui-background:
     dependencies:
@@ -7936,6 +7991,18 @@ importers:
       '@deepseek-ai/dsh-workspace':
         specifier: workspace:*
         version: link:../../workspace/workspace
+
+  packages/schedule/automations-remote:
+    devDependencies:
+      '@deepseek-ai/cordis':
+        specifier: workspace:*
+        version: link:../../../vendor/cordis
+      '@deepseek-ai/dsh-typert-protocol':
+        specifier: workspace:*
+        version: link:../../typert/protocol
+      '@dsh-custom/dsh-automations':
+        specifier: workspace:*
+        version: link:../automations
 
   packages/schedule/schedule:
     dependencies:

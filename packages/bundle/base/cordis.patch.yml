@@ -272,6 +272,9 @@
     - id: automations
       name: '@dsh-custom/dsh-automations'
 
+    - id: automations-remote
+      name: '@dsh-custom/dsh-automations-remote'
+
     - id: tool-git
       name: '@dsh-custom/dsh-tool-git'
 

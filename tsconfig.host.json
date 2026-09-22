@@ -357,6 +357,7 @@
     { "path": "./packages/git/git-remote" },
     { "path": "./packages/git/checkpoint-watcher" },
     { "path": "./packages/schedule/automations" },
+    { "path": "./packages/schedule/automations-remote" },
     { "path": "./packages/git/tool-git" }
   ]
 }
