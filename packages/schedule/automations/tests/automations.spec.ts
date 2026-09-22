@@ -112,7 +112,7 @@ describe('AutomationService', () => {
     await expect(service.runNow(created.id)).rejects.toThrow('already running')
     await first
 
-    const settled = service.store.get(created.id)
+    const settled = service.exposeStore().get(created.id)
     expect(settled?.lastOutcome).toBe('ok')
     // The schedule stayed ahead of the fired minute.
     expect(settled && settled.nextRunAt !== null ? Date.parse(settled.nextRunAt) : 0).toBeGreaterThan(Date.now() - 1_000)
