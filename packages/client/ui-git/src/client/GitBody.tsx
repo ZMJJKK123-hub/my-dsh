@@ -27,6 +27,7 @@ function labelsOf(t: TranslateNS<'gitPanel'>): GitNoticeLabels {
   return {
     committed: (hash, subject) => t('notice.committed', { hash, subject }),
     pushed: (remote, branch) => t('notice.pushed', { remote, branch }),
+    restored: () => t('notice.restored'),
     denied: t('error.denied'),
     failed: message => t('error.unavailable', { message }),
   }
@@ -89,7 +90,7 @@ function EntryRow({
 /** The source-control panel: everything one tab of this kind draws. */
 export function GitBody({
   useTabInfo, useStore, start, refresh, openDiff, stage, stageAll, unstage, commit, push,
-  generateMessage, t,
+  generateMessage, loadCheckpoints, restoreCheckpoint, t,
 }: GitBodyProps): ReactNode {
   const { tab } = useTabInfo()
   const { signal } = tab
@@ -102,7 +103,8 @@ export function GitBody({
     // component that has not unmounted yet.
     if (state !== undefined || signal.aborted) return
     start(tabId, signal)
-  }, [state, tabId, signal, start])
+    loadCheckpoints(tabId, signal)
+  }, [state, tabId, signal, start, loadCheckpoints])
 
   // The bucket appears with `start`; until then the panel is a loading line.
   if (state === undefined) {
@@ -234,6 +236,36 @@ export function GitBody({
       </header>
       {state.notice !== undefined && <div className={css.notice} data-git-notice>{state.notice}</div>}
       {body}
+      {state.status.kind === 'ready' && (
+        <section className={css.group} data-git-group="checkpoints">
+          <header className={css.groupHeader}>
+            <span>{t('checkpoints.title')}</span>
+          </header>
+          {state.checkpoints.kind === 'loading' && <div className={css.note}>{t('checkpoints.loading')}</div>}
+          {state.checkpoints.kind === 'ready' && state.checkpoints.checkpoints.length === 0 && (
+            <div className={css.note}>{t('checkpoints.empty')}</div>
+          )}
+          {state.checkpoints.kind === 'ready' && state.checkpoints.checkpoints.length > 0 && (
+            <ul className={css.list}>
+              {state.checkpoints.checkpoints.map(checkpoint => (
+                <li key={checkpoint.index} className={css.item} data-git-checkpoint={checkpoint.index}>
+                  <span className={css.row} title={checkpoint.label}>
+                    <span className={css.code}>{checkpoint.shortHash.slice(0, 7)}</span>
+                    <span className={css.name}>{checkpoint.label}</span>
+                  </span>
+                  <button
+                    type="button" className={css.gesture} disabled={state.busy}
+                    aria-label={t('action.restore')} title={t('action.restore')}
+                    onClick={() => { restoreCheckpoint(tabId, checkpoint.index, labels, signal) }}
+                  >
+                    {'↺'}
+                  </button>
+                </li>
+              ))}
+            </ul>
+          )}
+        </section>
+      )}
       <section className={css.diffArea} data-git-diff={state.diff.kind}>
         {state.diff.kind === 'idle' && <div className={css.note}>{t('diff.empty')}</div>}
         {state.diff.kind === 'loading' && <div className={css.note}>{t('diff.loading')}</div>}

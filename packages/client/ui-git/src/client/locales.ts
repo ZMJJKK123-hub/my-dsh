@@ -34,6 +34,7 @@ export const zh = {
   'action.commit': '提交',
   'action.generate': 'AI 生成',
   'action.push': '推送',
+  'action.restore': '恢复到此检查点',
   'commit.placeholder': '提交信息（首行为标题）',
   'commit.nothing': '没有已暂存的变更可提交。',
   'diff.loading': '正在加载差异…',
@@ -44,6 +45,10 @@ export const zh = {
   'error.unavailable': 'git 操作失败：{message}',
   'notice.committed': '已提交 {hash} {subject}',
   'notice.pushed': '已推送 {branch} 到 {remote}',
+  'notice.restored': '已从检查点恢复工作区',
+  'checkpoints.title': '检查点',
+  'checkpoints.empty': '暂无检查点',
+  'checkpoints.loading': '正在读取检查点…',
 } as const
 
 /** English dictionary. */
@@ -67,6 +72,7 @@ export const en = {
   'action.commit': 'Commit',
   'action.generate': 'Generate',
   'action.push': 'Push',
+  'action.restore': 'Restore to this checkpoint',
   'commit.placeholder': 'Commit message (first line is the subject)',
   'commit.nothing': 'Nothing staged to commit.',
   'diff.loading': 'Loading diff…',
@@ -77,6 +83,10 @@ export const en = {
   'error.unavailable': 'git operation failed: {message}',
   'notice.committed': 'Committed {hash} {subject}',
   'notice.pushed': 'Pushed {branch} to {remote}',
+  'notice.restored': 'Work tree restored from the checkpoint',
+  'checkpoints.title': 'Checkpoints',
+  'checkpoints.empty': 'No checkpoints yet',
+  'checkpoints.loading': 'Loading checkpoints…',
 } as const
 
 /** The namespace's key set: zh is the source of truth. */

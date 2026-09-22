@@ -97,6 +97,33 @@ export interface GitRemoteGeneratedMessageView {
   readonly message: string
 }
 
+/** One checkpoint of the list view. */
+export interface GitRemoteCheckpoint {
+  readonly series: string
+  readonly index: number
+  readonly hash: string
+  readonly shortHash: string
+  readonly label: string
+  readonly date: string
+}
+
+/** Checkpoint list view, newest first. */
+export interface GitRemoteCheckpointListView {
+  readonly checkpoints: readonly GitRemoteCheckpoint[]
+}
+
+/** Checkpoint list request: one session-scoped series. */
+export interface GitRemoteCheckpointListRequest {
+  readonly sessionId: SessionId
+}
+
+/** Checkpoint restore request: explicit paths restore only those. */
+export interface GitRemoteCheckpointRestoreRequest {
+  readonly sessionId: SessionId
+  readonly index: number
+  readonly paths?: readonly string[]
+}
+
 /** Selection of what one staging pass covers. */
 export interface GitRemoteStageRequest {
   readonly sessionId: SessionId

@@ -31,18 +31,20 @@ import type {
   GitStageResult, GitStatusSummary,
 } from '@dsh-custom/dsh-git'
 import type {
-  GitRemoteBranchListView, GitRemoteCommitRequest, GitRemoteCommitView, GitRemoteDiffRequest,
-  GitRemoteDiffView, GitRemoteGeneratedMessageView, GitRemoteLogRequest, GitRemoteLogView,
-  GitRemotePushRequest, GitRemotePushView, GitRemoteResult, GitRemoteSessionRequest,
-  GitRemoteStageRequest, GitRemoteStageView, GitRemoteStatusView,
+  GitRemoteBranchListView, GitRemoteCheckpointListView, GitRemoteCheckpointListRequest,
+  GitRemoteCheckpointRestoreRequest, GitRemoteCommitRequest, GitRemoteCommitView,
+  GitRemoteDiffRequest, GitRemoteDiffView, GitRemoteGeneratedMessageView, GitRemoteLogRequest,
+  GitRemoteLogView, GitRemotePushRequest, GitRemotePushView, GitRemoteResult,
+  GitRemoteSessionRequest, GitRemoteStageRequest, GitRemoteStageView, GitRemoteStatusView,
 } from './types.ts'
 
 export type {
-  GitRemoteBranch, GitRemoteBranchListView, GitRemoteCommitRequest, GitRemoteCommitView,
-  GitRemoteDiffRequest, GitRemoteDiffView, GitRemoteGeneratedMessageView, GitRemoteLogEntry,
-  GitRemoteLogRequest, GitRemoteLogView, GitRemotePushRequest, GitRemotePushView,
-  GitRemoteResult, GitRemoteSessionRequest, GitRemoteStageRequest, GitRemoteStageView,
-  GitRemoteStatusEntry, GitRemoteStatusView,
+  GitRemoteBranch, GitRemoteBranchListView, GitRemoteCheckpoint, GitRemoteCheckpointListView,
+  GitRemoteCheckpointListRequest, GitRemoteCheckpointRestoreRequest, GitRemoteCommitRequest,
+  GitRemoteCommitView, GitRemoteDiffRequest, GitRemoteDiffView, GitRemoteGeneratedMessageView,
+  GitRemoteLogEntry, GitRemoteLogRequest, GitRemoteLogView, GitRemotePushRequest,
+  GitRemotePushView, GitRemoteResult, GitRemoteSessionRequest, GitRemoteStageRequest,
+  GitRemoteStageView, GitRemoteStatusEntry, GitRemoteStatusView,
 } from './types.ts'
 
 declare module '@deepseek-ai/cordis' {
@@ -406,6 +408,48 @@ export class GitRemoteService extends TypertRemoteService {
       const message = normalizeCommitMessage(text)
       if (message === '') throw new Error('git-remote: the commit-message model produced no text')
       return { message }
+    })
+  }
+
+  /**
+   * `gitRemote.checkpoints`: the session's checkpoint series, newest first.
+   * @param request - the session whose checkpoint series to read.
+   * @returns the checkpoint list view, or the failure the panel renders.
+   */
+  @Remote('checkpoints')
+  async checkpoints(request: GitRemoteCheckpointListRequest): Promise<GitRemoteResult<GitRemoteCheckpointListView>> {
+    const resolved = this.resolve(request.sessionId)
+    if ('failure' in resolved) return resolved.failure
+    const cwd = resolved.cwd
+    // The session id is the series key: one checkpoint timeline per session.
+    const series = String(request.sessionId)
+    return await answer(async () => {
+      const listed = await this.ctx.git.checkpoints(cwd, series)
+      return { checkpoints: listed.checkpoints.map(checkpoint => ({ ...checkpoint })) }
+    })
+  }
+
+  /**
+   * `gitRemote.restoreCheckpoint`: return work-tree files to one checkpoint.
+   * @param request - the session, the checkpoint ordinal, and optional paths.
+   * @returns the restored echo, or the failure the panel renders.
+   */
+  @Remote('restoreCheckpoint')
+  async restoreCheckpoint(
+    request: GitRemoteCheckpointRestoreRequest,
+  ): Promise<GitRemoteResult<{ restored: readonly string[] }>> {
+    const resolved = this.resolve(request.sessionId)
+    if ('failure' in resolved) return resolved.failure
+    const cwd = resolved.cwd
+    const series = String(request.sessionId)
+    const paths = request.paths?.filter(path => path.trim() !== '') ?? []
+    return await answer(async () => {
+      const result = await this.ctx.git.checkpointRestore(cwd, {
+        series,
+        index: request.index,
+        ...paths.length > 0 ? { paths } : {},
+      })
+      return { restored: result.restored.map(path => path) }
     })
   }
 }

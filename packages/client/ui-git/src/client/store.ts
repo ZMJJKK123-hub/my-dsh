@@ -25,8 +25,16 @@ export type GitDiffState =
   | { readonly kind: 'ready'; readonly patch: string; readonly truncated: boolean }
   | { readonly kind: 'failed'; readonly message: string }
 
+/** What the tab knows about the session's checkpoints. */
+export type GitCheckpointsState =
+  | { readonly kind: 'idle' }
+  | { readonly kind: 'loading' }
+  | { readonly kind: 'ready'; readonly checkpoints: readonly { readonly index: number; readonly shortHash: string; readonly label: string; readonly date: string }[] }
+  | { readonly kind: 'failed'; readonly message: string }
+
 /** One tab's panel state. */
 export interface GitTabState {
+  checkpoints: GitCheckpointsState
   status: GitStatusState
   /** Repository-relative path whose diff is open, when one is. */
   selected: string | undefined
@@ -74,6 +82,13 @@ type GitActions = {
   notice: (draft: GitState, tabId: TabId, text: string) => void
   generating: (draft: GitState, tabId: TabId, on: boolean) => void
   generated: (draft: GitState, tabId: TabId, text: string) => void
+  checkpointsLoading: (draft: GitState, tabId: TabId) => void
+  checkpointsReady: (
+    draft: GitState,
+    tabId: TabId,
+    checkpoints: readonly { readonly index: number; readonly shortHash: string; readonly label: string; readonly date: string }[],
+  ) => void
+  checkpointsFailed: (draft: GitState, tabId: TabId, message: string) => void
   forget: (draft: GitState, tabId: TabId) => void
 }
 
@@ -89,7 +104,7 @@ export function createGitStore(): EngineStoreHandle<GitState, GitActions> {
     init: (): GitState => ({ byTab: {} }),
     actions: {
       start: (d, tabId: TabId) => {
-        d.byTab[tabId] = { status: { kind: 'loading' }, selected: undefined, selectedStaged: false, diff: { kind: 'idle' }, busy: false, notice: undefined, generating: false, generated: undefined }
+        d.byTab[tabId] = { checkpoints: { kind: 'idle' }, status: { kind: 'loading' }, selected: undefined, selectedStaged: false, diff: { kind: 'idle' }, busy: false, notice: undefined, generating: false, generated: undefined }
       },
       statusLoading: (d, tabId: TabId) => {
         bucket(d, tabId).status = { kind: 'loading' }
@@ -133,6 +148,15 @@ export function createGitStore(): EngineStoreHandle<GitState, GitActions> {
       },
       generated: (d, tabId: TabId, text: string) => {
         bucket(d, tabId).generated = text
+      },
+      checkpointsLoading: (d, tabId: TabId) => {
+        bucket(d, tabId).checkpoints = { kind: 'loading' }
+      },
+      checkpointsReady: (d, tabId: TabId, checkpoints) => {
+        bucket(d, tabId).checkpoints = { kind: 'ready', checkpoints }
+      },
+      checkpointsFailed: (d, tabId: TabId, message: string) => {
+        bucket(d, tabId).checkpoints = { kind: 'failed', message }
       },
       forget: (d, tabId: TabId) => {
         d.byTab = Object.fromEntries(Object.entries(d.byTab).filter(([id]) => id !== tabId))

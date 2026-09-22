@@ -125,6 +125,26 @@ describe('GitRemoteService', () => {
     expect(result.value.patch).toContain('+hello world')
   }, 30_000)
 
+  it('lists and restores checkpoints through the Remote', async () => {
+    const { readFileSync } = await import('node:fs')
+    await ctx.git.checkpointCreate(repo, { series: String(sessionId), index: 1, label: 'cp one' })
+    writeFileSync(join(repo, 'cp.txt'), 'original\n')
+    await ctx.git.checkpointCreate(repo, { series: String(sessionId), index: 2, label: 'cp two' })
+    writeFileSync(join(repo, 'cp.txt'), 'diverged\n')
+
+    const listed = await ctx.gitRemote.checkpoints({ sessionId })
+    expect(listed.ok).toBe(true)
+    if (!listed.ok) return
+    expect(listed.value.checkpoints.map(cp => cp.index)).toEqual([2, 1])
+    expect(listed.value.checkpoints[1]?.label).toBe('cp one')
+
+    const restored = await ctx.gitRemote.restoreCheckpoint({ sessionId, index: 2, paths: ['cp.txt'] })
+    expect(restored.ok).toBe(true)
+    if (!restored.ok) return
+    expect(restored.value.restored).toEqual(['cp.txt'])
+    expect(readFileSync(join(repo, 'cp.txt'), 'utf8').replace(/\r\n/g, '\n')).toBe('original\n')
+  }, 90_000)
+
   it('carries the denied flag through a policy-shaped failure', async () => {
     // A session whose workspace is outside any repository answers the seam's
     // not-a-repository failure with ok: false and no denied flag.

@@ -9,6 +9,7 @@ import type { TabId } from '@deepseek-ai/dsh-client-ui-dockkit'
 import type { SessionId } from '@deepseek-ai/dsh-session/types'
 import type { RemoteResult } from '@deepseek-ai/dsh-typert-protocol'
 import type {
+  GitRemoteCheckpointListView, GitRemoteCheckpointListRequest, GitRemoteCheckpointRestoreRequest,
   GitRemoteCommitRequest, GitRemoteCommitView, GitRemoteDiffRequest, GitRemoteDiffView,
   GitRemoteGeneratedMessageView, GitRemotePushRequest, GitRemotePushView, GitRemoteResult,
   GitRemoteSessionRequest, GitRemoteStageRequest, GitRemoteStageView, GitRemoteStatusView,
@@ -24,6 +25,8 @@ export interface GitRemoteFace {
   commit(request: GitRemoteCommitRequest): Promise<RemoteResult<GitRemoteResult<GitRemoteCommitView>>>
   push(request: GitRemotePushRequest): Promise<RemoteResult<GitRemoteResult<GitRemotePushView>>>
   generateCommitMessage(request: GitRemoteSessionRequest): Promise<RemoteResult<GitRemoteResult<GitRemoteGeneratedMessageView>>>
+  checkpoints(request: GitRemoteCheckpointListRequest): Promise<RemoteResult<GitRemoteResult<GitRemoteCheckpointListView>>>
+  restoreCheckpoint(request: GitRemoteCheckpointRestoreRequest): Promise<RemoteResult<GitRemoteResult<{ restored: readonly string[] }>>>
 }
 
 /** One unwrapped domain answer: the view, or the renderable failure. */
@@ -43,6 +46,8 @@ export interface GitNoticeLabels {
   readonly committed: (hash: string, subject: string) => string
   /** Compose the success line from the push target. */
   readonly pushed: (remote: string, branch: string) => string
+  /** The restore success line. */
+  readonly restored: () => string
   /** The policy-blocked line. */
   readonly denied: string
   /** Compose the failure line from the transport or domain message. */
@@ -69,6 +74,10 @@ export interface GitInjected {
   readonly push: (tabId: TabId, labels: GitNoticeLabels, signal: AbortSignal) => void
   /** Draft the commit message from the staged diff; the draft fills the commit box. */
   readonly generateMessage: (tabId: TabId, labels: GitNoticeLabels, signal: AbortSignal) => void
+  /** Load the session's checkpoint list into the store. */
+  readonly loadCheckpoints: (tabId: TabId, signal: AbortSignal) => void
+  /** Restore the work tree from one checkpoint; the notice line carries the outcome. */
+  readonly restoreCheckpoint: (tabId: TabId, index: number, labels: GitNoticeLabels, signal: AbortSignal) => void
 }
 
 /**
@@ -144,6 +153,29 @@ export function gitFace(
           actions.notice(tabId, answer.ok
             ? labels.pushed(answer.view.remote, answer.view.branch)
             : answer.denied ? labels.denied : labels.failed(answer.message))
+        })
+      },
+      loadCheckpoints(tabId, signal) {
+        if (signal.aborted) return
+        actions.checkpointsLoading(tabId)
+        void remote.checkpoints({ sessionId: session }).then(async (carried) => {
+          if (signal.aborted) return
+          const answer = await unwrap(carried)
+          if (answer.ok) actions.checkpointsReady(tabId, answer.view.checkpoints)
+          else actions.checkpointsFailed(tabId, answer.message)
+        })
+      },
+      restoreCheckpoint(tabId, index, labels, signal) {
+        mutate(tabId, signal, async () => {
+          const answer = await unwrap(await remote.restoreCheckpoint({ sessionId: session, index }))
+          if (answer.ok) {
+            actions.notice(tabId, labels.restored())
+            actions.checkpointsLoading(tabId)
+            const relisted = await unwrap(await remote.checkpoints({ sessionId: session }))
+            if (relisted.ok) actions.checkpointsReady(tabId, relisted.view.checkpoints)
+          } else {
+            actions.notice(tabId, answer.denied ? labels.denied : labels.failed(answer.message))
+          }
         })
       },
       generateMessage(tabId, labels, signal) {

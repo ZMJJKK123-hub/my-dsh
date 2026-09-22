@@ -39,6 +39,7 @@ describe('createGitStore', () => {
     const store = createGitStore().create()
     store.actions.start(TAB)
     expect(store.getSnapshot().byTab[TAB]).toEqual({
+      checkpoints: { kind: 'idle' },
       status: { kind: 'loading' },
       selected: undefined,
       selectedStaged: false,
@@ -96,6 +97,21 @@ describe('createGitStore', () => {
     expect(store.getSnapshot().byTab[TAB]?.notice).toBe('Committed abcd123 first')
     actions.forget(TAB)
     expect(store.getSnapshot().byTab[TAB]).toBeUndefined()
+  })
+
+  it('walks the checkpoint list through loading, ready, and failed', () => {
+    const store = createGitStore().create()
+    const { actions } = store
+    actions.start(TAB)
+    actions.checkpointsLoading(TAB)
+    expect(store.getSnapshot().byTab[TAB]?.checkpoints).toEqual({ kind: 'loading' })
+    actions.checkpointsReady(TAB, [{ index: 2, shortHash: 'abcd123', label: 'after', date: '2026-09-22T12:00:00Z' }])
+    expect(store.getSnapshot().byTab[TAB]?.checkpoints).toEqual({
+      kind: 'ready',
+      checkpoints: [{ index: 2, shortHash: 'abcd123', label: 'after', date: '2026-09-22T12:00:00Z' }],
+    })
+    actions.checkpointsFailed(TAB, 'not a git repository')
+    expect(store.getSnapshot().byTab[TAB]?.checkpoints).toEqual({ kind: 'failed', message: 'not a git repository' })
   })
 
   it('tracks message generation through generating and generated', () => {
