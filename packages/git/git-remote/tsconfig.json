@@ -15,6 +15,12 @@
       "path": "../../../vendor/cordis"
     },
     {
+      "path": "../../llm/llm"
+    },
+    {
+      "path": "../../util/timeout"
+    },
+    {
       "path": "../../core/session"
     },
     {

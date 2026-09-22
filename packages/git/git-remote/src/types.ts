@@ -92,6 +92,11 @@ export interface GitRemotePushView {
   readonly setUpstream: boolean
 }
 
+/** Generated-commit-message view: the model-authored message text. */
+export interface GitRemoteGeneratedMessageView {
+  readonly message: string
+}
+
 /** Selection of what one staging pass covers. */
 export interface GitRemoteStageRequest {
   readonly sessionId: SessionId

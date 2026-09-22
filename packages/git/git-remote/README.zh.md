@@ -7,13 +7,16 @@
 ## 工作方式
 
 - 注册 `GitRemoteService`（一个 `TypertRemoteService`）为 `ctx.gitRemote`，wire 命名空间 `gitRemote`；浏览器半边使用的生成式挂载模块是 `./remote` 导出（`lib/typert.remote-client.js`，由 workspace tsdown 的 Typert 通道产出）。
-- Remote 方法：`status`、`diff`、`log`、`branches`、`stage`、`unstage`、`commit`、`push` —— 各自接收 `{ sessionId, ... }`，解析会话的 `header.cwd`，并调用一次 `ctx.git`。
+- Remote 方法：`status`、`diff`、`log`、`branches`、`stage`、`unstage`、`commit`、`push` —— 各自接收 `{ sessionId, ... }`，解析会话的 `header.cwd`，并调用一次 `ctx.git`；另有 `generateCommitMessage`：一次辅助模型补全，把暂存差异装帧并把回复归一化为提交信息文本。
 - 失败保留在结果里：`GitError` 变成 `{ ok: false, error, denied? }`；Remote 调用永不 reject。
 - Web 客户端自行挂载该命名空间（`ctx.remote.$mount`），与 `ui-change-monitor` 挂载 `changeMonitor` 的方式一致。
 
 ## 配置
 
-无。
+- `provider` + `model`（成对，可选）：`generateCommitMessage` 的模型路由。两者不同时配置时，该方法返回如实的未配置失败；其余方法无需配置即可用。
+- `maxDiffBytes`（默认 `65536`）：喂给模型的暂存差异上限。
+- `maxOutputTokens`（默认 `128`）：生成输出 token 上限。
+- `timeoutMs`（默认 `60000`）：生成端到端超时。
 
 ## Model Experience
 

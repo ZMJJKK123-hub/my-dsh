@@ -2,7 +2,7 @@
 
 English | [中文](README.zh.md)
 
-Source-control panel for the Web Client: a right-sidebar tab showing the session repository's branch, ahead/behind counts, staged and unstaged change lists with per-file staging, a diff view for the selected file, a commit box, and push — all driven by the `gitRemote` Remote namespace.
+Source-control panel for the Web Client: a right-sidebar tab showing the session repository's branch, ahead/behind counts, staged and unstaged change lists with per-file staging, a diff view for the selected file, a commit box with an AI-generate button (when the host row configures a model route), and push — all driven by the `gitRemote` Remote namespace.
 
 ## How it works
 
@@ -27,4 +27,4 @@ None.
 
 - The diff view renders the patch as plain monospace text; a hunk-level red/green renderer and file opening through `tabActions` are later additions.
 - No change-event subscription: the panel refreshes on mount, on gesture, and by the refresh button; a push/commit notification stream belongs to the host seam later.
-- The commit message box is plain text; the host-side AI message generator arrives with the follow-up step.
+- The AI-generate button rests until something is staged; without a host-configured route the answer is the honest not-configured failure line.

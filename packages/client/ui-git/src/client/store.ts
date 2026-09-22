@@ -37,6 +37,10 @@ export interface GitTabState {
   busy: boolean
   /** The last settled action's one-line result. */
   notice: string | undefined
+  /** A commit-message draft is being generated. */
+  generating: boolean
+  /** The latest generated draft; a change fills the commit box. */
+  generated: string | undefined
 }
 
 /** Every tab's state, keyed by tab id. */
@@ -68,6 +72,8 @@ type GitActions = {
   diffFailed: (draft: GitState, tabId: TabId, message: string) => void
   busy: (draft: GitState, tabId: TabId, on: boolean) => void
   notice: (draft: GitState, tabId: TabId, text: string) => void
+  generating: (draft: GitState, tabId: TabId, on: boolean) => void
+  generated: (draft: GitState, tabId: TabId, text: string) => void
   forget: (draft: GitState, tabId: TabId) => void
 }
 
@@ -83,7 +89,7 @@ export function createGitStore(): EngineStoreHandle<GitState, GitActions> {
     init: (): GitState => ({ byTab: {} }),
     actions: {
       start: (d, tabId: TabId) => {
-        d.byTab[tabId] = { status: { kind: 'loading' }, selected: undefined, selectedStaged: false, diff: { kind: 'idle' }, busy: false, notice: undefined }
+        d.byTab[tabId] = { status: { kind: 'loading' }, selected: undefined, selectedStaged: false, diff: { kind: 'idle' }, busy: false, notice: undefined, generating: false, generated: undefined }
       },
       statusLoading: (d, tabId: TabId) => {
         bucket(d, tabId).status = { kind: 'loading' }
@@ -121,6 +127,12 @@ export function createGitStore(): EngineStoreHandle<GitState, GitActions> {
       },
       notice: (d, tabId: TabId, text: string) => {
         bucket(d, tabId).notice = text
+      },
+      generating: (d, tabId: TabId, on: boolean) => {
+        bucket(d, tabId).generating = on
+      },
+      generated: (d, tabId: TabId, text: string) => {
+        bucket(d, tabId).generated = text
       },
       forget: (d, tabId: TabId) => {
         d.byTab = Object.fromEntries(Object.entries(d.byTab).filter(([id]) => id !== tabId))

@@ -88,7 +88,8 @@ function EntryRow({
 
 /** The source-control panel: everything one tab of this kind draws. */
 export function GitBody({
-  useTabInfo, useStore, start, refresh, openDiff, stage, stageAll, unstage, commit, push, t,
+  useTabInfo, useStore, start, refresh, openDiff, stage, stageAll, unstage, commit, push,
+  generateMessage, t,
 }: GitBodyProps): ReactNode {
   const { tab } = useTabInfo()
   const { signal } = tab
@@ -107,6 +108,11 @@ export function GitBody({
   if (state === undefined) {
     return <div className={css.panel} data-git-panel="loading">{t('loading')}</div>
   }
+
+  // A fresh draft lands in the commit box once; typing afterwards is the user's.
+  useEffect(() => {
+    if (state?.generated !== undefined) setMessage(state.generated)
+  }, [state?.generated])
 
   const labels = labelsOf(t)
   const status: GitStatusState = state.status
@@ -174,6 +180,12 @@ export function GitBody({
               data-git-input="message"
             />
             <div className={css.commitRow}>
+              <button
+                type="button" disabled={state.busy || state.generating || staged.length === 0}
+                onClick={() => { generateMessage(tabId, labels, signal) }}
+              >
+                {state.generating ? t('loading') : t('action.generate')}
+              </button>
               <button
                 type="button" className={css.primary} disabled={state.busy || staged.length === 0 || message.trim() === ''}
                 onClick={() => {

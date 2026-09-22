@@ -10,8 +10,8 @@ import type { SessionId } from '@deepseek-ai/dsh-session/types'
 import type { RemoteResult } from '@deepseek-ai/dsh-typert-protocol'
 import type {
   GitRemoteCommitRequest, GitRemoteCommitView, GitRemoteDiffRequest, GitRemoteDiffView,
-  GitRemotePushRequest, GitRemotePushView, GitRemoteResult, GitRemoteSessionRequest,
-  GitRemoteStageRequest, GitRemoteStageView, GitRemoteStatusView,
+  GitRemoteGeneratedMessageView, GitRemotePushRequest, GitRemotePushView, GitRemoteResult,
+  GitRemoteSessionRequest, GitRemoteStageRequest, GitRemoteStageView, GitRemoteStatusView,
 } from '@dsh-custom/dsh-git-remote/types'
 import type { createGitStore } from './store.ts'
 
@@ -23,6 +23,7 @@ export interface GitRemoteFace {
   unstage(request: GitRemoteStageRequest): Promise<RemoteResult<GitRemoteResult<GitRemoteStageView>>>
   commit(request: GitRemoteCommitRequest): Promise<RemoteResult<GitRemoteResult<GitRemoteCommitView>>>
   push(request: GitRemotePushRequest): Promise<RemoteResult<GitRemoteResult<GitRemotePushView>>>
+  generateCommitMessage(request: GitRemoteSessionRequest): Promise<RemoteResult<GitRemoteResult<GitRemoteGeneratedMessageView>>>
 }
 
 /** One unwrapped domain answer: the view, or the renderable failure. */
@@ -66,6 +67,8 @@ export interface GitInjected {
   readonly commit: (tabId: TabId, message: string, labels: GitNoticeLabels, signal: AbortSignal) => void
   /** Push the current branch; the notice line carries the outcome. */
   readonly push: (tabId: TabId, labels: GitNoticeLabels, signal: AbortSignal) => void
+  /** Draft the commit message from the staged diff; the draft fills the commit box. */
+  readonly generateMessage: (tabId: TabId, labels: GitNoticeLabels, signal: AbortSignal) => void
 }
 
 /**
@@ -141,6 +144,19 @@ export function gitFace(
           actions.notice(tabId, answer.ok
             ? labels.pushed(answer.view.remote, answer.view.branch)
             : answer.denied ? labels.denied : labels.failed(answer.message))
+        })
+      },
+      generateMessage(tabId, labels, signal) {
+        if (signal.aborted) return
+        actions.generating(tabId, true)
+        void remote.generateCommitMessage({ sessionId: session }).then(async (carried) => {
+          if (signal.aborted) return
+          const answer = await unwrap(carried)
+          actions.generating(tabId, false)
+          if (answer.ok) actions.generated(tabId, answer.view.message)
+          else actions.notice(tabId, answer.denied ? labels.denied : labels.failed(answer.message))
+        }).catch(() => {
+          if (!signal.aborted) actions.generating(tabId, false)
         })
       },
     }

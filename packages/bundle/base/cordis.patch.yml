@@ -262,6 +262,9 @@
 
     - id: git-remote
       name: '@dsh-custom/dsh-git-remote'
+      config:
+        provider: deepseek-official
+        model: deepseek-v4-flash
 
     - id: tool-git
       name: '@dsh-custom/dsh-tool-git'

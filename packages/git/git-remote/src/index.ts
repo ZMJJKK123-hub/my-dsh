@@ -7,10 +7,20 @@
  * panel-renderable error, with `denied` when the standing sandbox policy
  * blocked a mutation). A Remote call never rejects.
  *
+ * `generateCommitMessage` adds one auxiliary model call: it frames the staged
+ * diff, streams exactly one completion through `ctx.llm` under the configured
+ * provider+model route, and normalizes the reply into commit-message text.
+ * With no route configured it answers the honest not-configured failure.
+ *
  * @module @dsh-custom/dsh-git-remote
  */
 
 import type { Context } from '@deepseek-ai/cordis'
+import z from '@deepseek-ai/schemastery'
+import { BlockAssembler, createUserMessage } from '@deepseek-ai/dsh-llm'
+import type { FinishReason, GenerateOptions, Message } from '@deepseek-ai/dsh-llm'
+import type {} from '@deepseek-ai/dsh-llm'
+import { deadline } from '@deepseek-ai/dsh-timeout'
 import { Remote, TypertRemoteService } from '@deepseek-ai/dsh-typert-protocol'
 import type {} from '@deepseek-ai/dsh-session'
 import type { SessionId } from '@deepseek-ai/dsh-session'
@@ -22,17 +32,17 @@ import type {
 } from '@dsh-custom/dsh-git'
 import type {
   GitRemoteBranchListView, GitRemoteCommitRequest, GitRemoteCommitView, GitRemoteDiffRequest,
-  GitRemoteDiffView, GitRemoteLogRequest, GitRemoteLogView, GitRemotePushRequest,
-  GitRemotePushView, GitRemoteResult, GitRemoteSessionRequest, GitRemoteStageRequest,
-  GitRemoteStageView, GitRemoteStatusView,
+  GitRemoteDiffView, GitRemoteGeneratedMessageView, GitRemoteLogRequest, GitRemoteLogView,
+  GitRemotePushRequest, GitRemotePushView, GitRemoteResult, GitRemoteSessionRequest,
+  GitRemoteStageRequest, GitRemoteStageView, GitRemoteStatusView,
 } from './types.ts'
 
 export type {
   GitRemoteBranch, GitRemoteBranchListView, GitRemoteCommitRequest, GitRemoteCommitView,
-  GitRemoteDiffRequest, GitRemoteDiffView, GitRemoteLogEntry, GitRemoteLogRequest,
-  GitRemoteLogView, GitRemotePushRequest, GitRemotePushView, GitRemoteResult,
-  GitRemoteSessionRequest, GitRemoteStageRequest, GitRemoteStageView, GitRemoteStatusEntry,
-  GitRemoteStatusView,
+  GitRemoteDiffRequest, GitRemoteDiffView, GitRemoteGeneratedMessageView, GitRemoteLogEntry,
+  GitRemoteLogRequest, GitRemoteLogView, GitRemotePushRequest, GitRemotePushView,
+  GitRemoteResult, GitRemoteSessionRequest, GitRemoteStageRequest, GitRemoteStageView,
+  GitRemoteStatusEntry, GitRemoteStatusView,
 } from './types.ts'
 
 declare module '@deepseek-ai/cordis' {
@@ -115,11 +125,88 @@ function stageView(result: GitStageResult): GitRemoteStageView {
   return { stagedPaths: result.stagedPaths.map(path => path) }
 }
 
-export class GitRemoteService extends TypertRemoteService {
-  static inject = ['sessions', 'git']
+/** System prompt for the auxiliary commit-message completion. */
+const COMMIT_MESSAGE_SYSTEM = [
+  'You write git commit messages.',
+  'Reply with ONLY the commit message: one concise subject line (at most 72 characters, imperative mood, no trailing period),',
+  'optionally followed by a blank line and a short body explaining what changed and why.',
+  'No surrounding quotes, no markdown code fences, no commentary.',
+].join(' ')
 
-  constructor(ctx: Context) {
+/** Cap of the normalized message the service ever returns. */
+const MAX_MESSAGE_LENGTH = 1_000
+
+/**
+ * Normalize one model reply into commit-message text: strip code fences and
+ * stray quoting, collapse blank runs, and cap the length.
+ * @param text - the assembled model text.
+ * @returns the normalized message.
+ */
+function normalizeCommitMessage(text: string): string {
+  let message = text.trim()
+  const fenced = /^```[a-zA-Z]*\n([\s\S]*?)\n```$/.exec(message)
+  if (fenced !== null) message = fenced[1]?.trim() ?? message
+  message = message.replace(/^["'`]+|[`"']+$/g, '').replace(/\n{3,}/g, '\n\n').trim()
+  return message.slice(0, MAX_MESSAGE_LENGTH)
+}
+
+/**
+ * Translate one terminal finish reason into the auxiliary-call failure.
+ * @param finish - the assembled stream's terminal reason.
+ * @returns the failure, or undefined for a clean stop.
+ */
+function finishError(finish: FinishReason): Error | undefined {
+  switch (finish.kind) {
+    case 'stop':
+      return undefined
+    case 'error':
+    case 'aborted':
+      return new Error(finish.failure.message)
+    case 'max-tokens':
+      return new Error('git-remote: commit message reached maxOutputTokens')
+    case 'tool-calls':
+      return new Error('git-remote: commit message model unexpectedly requested a tool')
+  }
+}
+
+/** Plugin config (all optional — `static Config` supplies the defaults). */
+export interface Config {
+  /** Provider route for commit-message generation; must be paired with `model`. */
+  provider?: string
+  /** Model id for commit-message generation; must be paired with `provider`. */
+  model?: string
+  /** Cap of the staged diff fed to the model, in bytes. */
+  maxDiffBytes?: number
+  /** Generation output-token cap. */
+  maxOutputTokens?: number
+  /** End-to-end generation deadline in milliseconds. */
+  timeoutMs?: number
+}
+
+type ResolvedConfig = Required<Pick<Config, 'maxDiffBytes' | 'maxOutputTokens' | 'timeoutMs'>> & Config
+
+export class GitRemoteService extends TypertRemoteService {
+  static inject = ['sessions', 'git', 'llm']
+
+  static Config: z<Config> = z.object({
+    provider: z.string(),
+    model: z.string(),
+    maxDiffBytes: z.number().default(65_536),
+    maxOutputTokens: z.number().default(128),
+    timeoutMs: z.number().default(60_000),
+  })
+
+  private readonly config: ResolvedConfig
+
+  constructor(ctx: Context, config: Config = {}) {
     super(ctx, 'gitRemote')
+    this.config = {
+      maxDiffBytes: config.maxDiffBytes ?? 65_536,
+      maxOutputTokens: config.maxOutputTokens ?? 128,
+      timeoutMs: config.timeoutMs ?? 60_000,
+      ...config.provider !== undefined ? { provider: config.provider } : {},
+      ...config.model !== undefined ? { model: config.model } : {},
+    }
   }
 
   /**
@@ -261,6 +348,64 @@ export class GitRemoteService extends TypertRemoteService {
         ...request.setUpstream === true ? { setUpstream: true } : {},
       })
       return { remote: result.remote, branch: result.branch, setUpstream: result.setUpstream }
+    })
+  }
+
+  /**
+   * `gitRemote.generateCommitMessage`: one auxiliary model completion that
+   * drafts the commit message from the staged diff. Requires the
+   * provider+model route to be configured on this row; without it the answer
+   * is the honest not-configured failure.
+   * @param request - the session whose staged diff to frame.
+   * @returns the drafted message, or the failure the panel renders.
+   */
+  @Remote('generateCommitMessage')
+  async generateCommitMessage(request: GitRemoteSessionRequest): Promise<GitRemoteResult<GitRemoteGeneratedMessageView>> {
+    const provider = this.config.provider
+    const model = this.config.model
+    if (provider === undefined || model === undefined) {
+      return { ok: false, error: 'git-remote: commit-message generation is not configured; set provider and model together on the git-remote row' }
+    }
+    const resolved = this.resolve(request.sessionId)
+    if ('failure' in resolved) return resolved.failure
+    const cwd = resolved.cwd
+    return await answer(async () => {
+      const diff = await this.ctx.git.diff(cwd, { staged: true, maxBytes: this.config.maxDiffBytes })
+      if (diff.patch.trim() === '') {
+        throw new GitError('nothing is staged; stage changes before generating a commit message', 1, '')
+      }
+      const userText = `Write the commit message for these staged changes:\n\n${diff.patch}\n${diff.truncated ? '\n(the diff was truncated at its tail)\n' : ''}`
+      const messages: Message[] = [createUserMessage({
+        content: [{ type: 'text', text: userText }],
+        source: { kind: 'plugin', plugin: 'dsh-git-remote' },
+      })]
+      using callDeadline = deadline(undefined, this.config.timeoutMs, 'GIT_COMMIT_MESSAGE_TIMEOUT')
+      const options: GenerateOptions = {
+        provider,
+        model,
+        messages,
+        system: COMMIT_MESSAGE_SYSTEM,
+        maxTokens: this.config.maxOutputTokens,
+        signal: callDeadline.signal,
+      }
+      const assembler = new BlockAssembler()
+      for await (const chunk of this.ctx.llm.stream(options)) {
+        callDeadline.signal.throwIfAborted()
+        assembler.push(chunk)
+      }
+      const terminalError = finishError(assembler.finish)
+      if (terminalError !== undefined) throw terminalError
+      const blocks = assembler.blocks()
+      if (blocks.some(block => block.type === 'tool-call')) {
+        throw new Error('git-remote: the commit-message model returned a tool call')
+      }
+      const text = blocks
+        .filter((block): block is Extract<(typeof blocks)[number], { type: 'text' }> => block.type === 'text')
+        .map(block => block.text)
+        .join(' ')
+      const message = normalizeCommitMessage(text)
+      if (message === '') throw new Error('git-remote: the commit-message model produced no text')
+      return { message }
     })
   }
 }

@@ -45,6 +45,8 @@ describe('createGitStore', () => {
       diff: { kind: 'idle' },
       busy: false,
       notice: undefined,
+      generating: false,
+      generated: undefined,
     })
   })
 
@@ -94,5 +96,16 @@ describe('createGitStore', () => {
     expect(store.getSnapshot().byTab[TAB]?.notice).toBe('Committed abcd123 first')
     actions.forget(TAB)
     expect(store.getSnapshot().byTab[TAB]).toBeUndefined()
+  })
+
+  it('tracks message generation through generating and generated', () => {
+    const store = createGitStore().create()
+    const { actions } = store
+    actions.start(TAB)
+    actions.generating(TAB, true)
+    expect(store.getSnapshot().byTab[TAB]?.generating).toBe(true)
+    actions.generating(TAB, false)
+    actions.generated(TAB, 'Add feature')
+    expect(store.getSnapshot().byTab[TAB]).toMatchObject({ generating: false, generated: 'Add feature' })
   })
 })
