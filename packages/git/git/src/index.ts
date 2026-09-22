@@ -12,16 +12,19 @@
 
 import { Context, Service } from '@deepseek-ai/cordis'
 import type {
-  GitBranchListResult, GitCommitOptions, GitCommitResult, GitDiffOptions, GitDiffResult,
-  GitLogOptions, GitLogResult, GitPushOptions, GitPushResult, GitStageResult,
-  GitStageSelection, GitStatusSummary,
+  GitBranchListResult, GitCheckpoint, GitCheckpointCreateOptions, GitCheckpointListResult,
+  GitCheckpointRestoreOptions, GitCheckpointRestoreResult, GitCommitOptions, GitCommitResult,
+  GitDiffOptions, GitDiffResult, GitLogOptions, GitLogResult, GitPushOptions, GitPushResult,
+  GitStageResult, GitStageSelection, GitStatusSummary,
 } from './types.ts'
 
 export { GitError } from './types.ts'
 export type {
-  GitBranch, GitBranchListResult, GitCommitOptions, GitCommitResult, GitDiffOptions,
-  GitDiffResult, GitLogEntry, GitLogOptions, GitLogResult, GitPushOptions, GitPushResult,
-  GitStageResult, GitStageSelection, GitStatusEntry, GitStatusSummary,
+  GitBranch, GitBranchListResult, GitCheckpoint, GitCheckpointCreateOptions,
+  GitCheckpointListResult, GitCheckpointRestoreOptions, GitCheckpointRestoreResult,
+  GitCommitOptions, GitCommitResult, GitDiffOptions, GitDiffResult, GitLogEntry,
+  GitLogOptions, GitLogResult, GitPushOptions, GitPushResult, GitStageResult,
+  GitStageSelection, GitStatusEntry, GitStatusSummary,
 } from './types.ts'
 
 declare module '@deepseek-ai/cordis' {
@@ -142,6 +145,41 @@ export abstract class GitService extends Service {
    * @throws {@link GitError} when there is no upstream, the remote rejects, or a policy denies the write.
    */
   abstract push(cwd: string, options?: GitPushOptions, signal?: AbortSignal): Promise<GitPushResult>
+
+  /**
+   * Create one shadow checkpoint: a parentless commit capturing the whole
+   * work tree (untracked files included, ignored files excluded) under
+   * `refs/dsh/checkpoints/<series>/<index>`, never touching HEAD or the
+   * user's index. Creating prunes the series to the provider's keep-last bound.
+   * @param cwd - any directory inside the repository.
+   * @param options - series key, ordinal, and label.
+   * @param signal - aborts the run.
+   * @returns the created checkpoint.
+   * @throws {@link GitError} when outside a repository or a policy denies the write.
+   */
+  abstract checkpointCreate(cwd: string, options: GitCheckpointCreateOptions, signal?: AbortSignal): Promise<GitCheckpoint>
+
+  /**
+   * List one series' checkpoints, newest (highest ordinal) first.
+   * @param cwd - any directory inside the repository.
+   * @param series - the sanitized series key.
+   * @param signal - aborts the run.
+   * @returns the checkpoints; an empty list for an unknown series.
+   * @throws {@link GitError} when outside a repository or git fails.
+   */
+  abstract checkpoints(cwd: string, series: string, signal?: AbortSignal): Promise<GitCheckpointListResult>
+
+  /**
+   * Restore work-tree files from one checkpoint (`git restore --source`):
+   * file contents return to the captured state, HEAD and the user's index
+   * stay untouched, and files created after the checkpoint remain.
+   * @param cwd - any directory inside the repository.
+   * @param options - the checkpoint and optional explicit paths.
+   * @param signal - aborts the run.
+   * @returns the checkpoint and the explicit paths restored.
+   * @throws {@link GitError} when the checkpoint is unknown or a policy denies the write.
+   */
+  abstract checkpointRestore(cwd: string, options: GitCheckpointRestoreOptions, signal?: AbortSignal): Promise<GitCheckpointRestoreResult>
 }
 
 export default GitService

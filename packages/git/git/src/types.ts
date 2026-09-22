@@ -162,6 +162,59 @@ export interface GitPushResult {
   readonly setUpstream: boolean
 }
 
+/** Where one checkpoint lands: a series key plus a series-local ordinal. */
+export interface GitCheckpointCreateOptions {
+  /** Stable key naming the checkpoint series (usually the session id); sanitized into the ref name. */
+  readonly series: string
+  /** Series-local ordinal naming this checkpoint; zero-padded into the ref name. */
+  readonly index: number
+  /** Human label stored as the shadow commit's subject. */
+  readonly label: string
+}
+
+/** One shadow checkpoint: a commit under `refs/dsh/checkpoints/<series>/<index>`. */
+export interface GitCheckpoint {
+  /** The sanitized series key the checkpoint belongs to. */
+  readonly series: string
+  /** The series-local ordinal. */
+  readonly index: number
+  /** Full commit hash of the shadow commit. */
+  readonly hash: string
+  /** Abbreviated commit hash. */
+  readonly shortHash: string
+  /** The stored label (the commit subject). */
+  readonly label: string
+  /** Committer date in ISO 8601. */
+  readonly date: string
+}
+
+/** Checkpoint list of one series, newest (highest ordinal) first. */
+export interface GitCheckpointListResult {
+  readonly checkpoints: readonly GitCheckpoint[]
+}
+
+/** What one restore pass covers: a checkpoint plus optional explicit paths. */
+export interface GitCheckpointRestoreOptions {
+  /** The sanitized series key the checkpoint belongs to. */
+  readonly series: string
+  /** The series-local ordinal to restore from. */
+  readonly index: number
+  /** Repository-relative paths to restore; omit to restore the whole captured tree. */
+  readonly paths?: readonly string[] | undefined
+}
+
+/** Result of one {@link GitService.checkpointRestore} run. */
+export interface GitCheckpointRestoreResult {
+  /** The checkpoint restored from. */
+  readonly checkpoint: GitCheckpoint
+  /**
+   * The explicit paths actually present in the checkpoint and restored; an
+   * empty list means the whole captured tree was restored (or nothing was
+   * requested-and-found).
+   */
+  readonly restored: readonly string[]
+}
+
 /**
  * A git command failed. Carries the raw exit code and stderr so consumers can
  * surface the honest cause; `denied` marks a run the sandbox blocked before

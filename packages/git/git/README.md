@@ -6,7 +6,7 @@ Service Definition for the `ctx.git` capability seam: repository facts (root, st
 
 ## How it works
 
-- Declares the abstract `GitService` (`ctx.git`): `resolveRoot`, `status`, `diff`, `log`, `branches` (facts) and `stage`, `unstage`, `commit`, `push` (mutations).
+- Declares the abstract `GitService` (`ctx.git`): `resolveRoot`, `status`, `diff`, `log`, `branches` (facts); `stage`, `unstage`, `commit`, `push` (mutations); and `checkpointCreate`, `checkpoints`, `checkpointRestore` (shadow checkpoints under `refs/dsh/checkpoints/<series>/<index>`, never touching HEAD or the user's index).
 - Every method takes the repository directory per call — the caller resolves the session workspace.
 - Fact methods never write. Mutation methods must enforce the caller's standing file policy: a read-only policy denies them with a `GitError` whose `denied` flag is set.
 - Git failures reject with `GitError` (exit code, stderr, and the `denied` flag when a sandbox policy blocked the run).

@@ -192,3 +192,119 @@ describe('LocalGitService', () => {
     expect(status.upstream).toBe('origin/main')
   }, 60_000)
 })
+
+describe('LocalGitService checkpoints', () => {
+  const scratch = mkdtempSync(join(tmpdir(), 'dsh-git-cp-spec-'))
+  const repo = join(scratch, 'repo')
+
+  /** A fresh harness; keepLast configurable for the prune case. */
+  async function setup(config: Record<string, unknown> = {}): Promise<Context> {
+    const ctx = new Context()
+    await ctx.plugin(LocalSubprocessRuntime)
+    await ctx.plugin(LocalGitService, config)
+    return ctx
+  }
+
+  afterAll(() => {
+    rmSync(scratch, { recursive: true, force: true })
+  })
+
+  it('creates, lists, and restores whole-tree checkpoints without touching HEAD or the index', async () => {
+    const ctx = await setup()
+    mkdirSync(repo)
+    await exec('git', ['init', '-b', 'main'], { cwd: repo })
+    // Hermetic line endings: restore must write back exactly what was captured.
+    await exec('git', ['config', 'core.autocrlf', 'false'], { cwd: repo })
+    writeFileSync(join(repo, 'a.txt'), 'original\n')
+    await exec('git', ['-c', 'user.name=t', '-c', 'user.email=t@t', 'add', '.'], { cwd: repo })
+    await exec('git', ['-c', 'user.name=t', '-c', 'user.email=t@t', 'commit', '-m', 'base'], { cwd: repo })
+    // A real staged change: a.txt differs from HEAD and sits in the index.
+    writeFileSync(join(repo, 'a.txt'), 'staged\n')
+    await exec('git', ['-c', 'user.name=t', '-c', 'user.email=t@t', 'add', 'a.txt'], { cwd: repo })
+
+    const first = await ctx.git.checkpointCreate(repo, { series: 'spec-session', index: 1, label: 'before edit' })
+    expect(first.label).toBe('before edit')
+    expect(first.shortHash).toMatch(/^[0-9a-f]+$/)
+    expect(first.date).not.toBe('')
+
+    // The user's staged state and HEAD survive the checkpoint untouched.
+    const stagedBefore = await ctx.git.status(repo)
+    expect(stagedBefore.entries.some(entry => entry.path === 'a.txt' && entry.staged)).toBe(true)
+
+    writeFileSync(join(repo, 'a.txt'), 'edited\n')
+    writeFileSync(join(repo, 'new-after-cp.txt'), 'later\n')
+    const second = await ctx.git.checkpointCreate(repo, { series: 'spec-session', index: 2, label: 'after edit' })
+
+    const listed = await ctx.git.checkpoints(repo, 'spec-session')
+    expect(listed.checkpoints.map(cp => cp.index)).toEqual([2, 1])
+    expect(listed.checkpoints[0]?.label).toBe('after edit')
+    expect(listed.checkpoints[1]?.hash).toBe(first.hash)
+
+    const restored = await ctx.git.checkpointRestore(repo, { series: 'spec-session', index: 1 })
+    expect(restored.checkpoint.hash).toBe(first.hash)
+    expect(restored.restored).toEqual([])
+    const { readFileSync } = await import('node:fs')
+    expect(readFileSync(join(repo, 'a.txt'), 'utf8')).toBe('staged\n')
+    // Files created after the checkpoint remain (restore is corrective, not destructive).
+    expect(readFileSync(join(repo, 'new-after-cp.txt'), 'utf8')).toBe('later\n')
+    // HEAD still points at the user's single base commit.
+    const log = await ctx.git.log(repo)
+    expect(log.entries).toHaveLength(1)
+
+    void second
+  }, 120_000)
+
+  it('restores explicit paths only', async () => {
+    const ctx = await setup()
+    writeFileSync(join(repo, 'a.txt'), 'edited again\n')
+    await ctx.git.checkpointCreate(repo, { series: 'spec-session', index: 3, label: 'mixed' })
+    writeFileSync(join(repo, 'a.txt'), 'diverged\n')
+    writeFileSync(join(repo, 'b.txt'), 'untouched\n')
+
+    const result = await ctx.git.checkpointRestore(repo, { series: 'spec-session', index: 3, paths: ['a.txt', 'missing.txt'] })
+    expect(result.restored).toEqual(['a.txt'])
+    const { readFileSync } = await import('node:fs')
+    expect(readFileSync(join(repo, 'a.txt'), 'utf8')).toBe('edited again\n')
+    expect(readFileSync(join(repo, 'b.txt'), 'utf8')).toBe('untouched\n')
+  }, 90_000)
+
+  it('answers an empty list for an unknown series and rejects an unknown checkpoint', async () => {
+    const ctx = await setup()
+    const listed = await ctx.git.checkpoints(repo, 'no-such-series')
+    expect(listed.checkpoints).toEqual([])
+    await expect(ctx.git.checkpointRestore(repo, { series: 'no-such-series', index: 9 })).rejects.toBeInstanceOf(GitError)
+    // Slashes are sanitized into a refname-safe series, not rejected.
+    const sanitized = await ctx.git.checkpointCreate(repo, { series: 'bad/series', index: 1, label: 'x' })
+    expect(sanitized.series).toBe('bad-series')
+    expect((await ctx.git.checkpoints(repo, 'bad-series')).checkpoints).toHaveLength(1)
+    // A series that sanitizes to nothing has no legal ref segment.
+    await expect(ctx.git.checkpointCreate(repo, { series: '  ', index: 1, label: 'x' })).rejects.toBeInstanceOf(GitError)
+  }, 60_000)
+
+  it('prunes to checkpointKeepLast, keeping the newest', async () => {
+    const ctx = await setup({ checkpointKeepLast: 2 })
+    for (let index = 1; index <= 4; index += 1) {
+      writeFileSync(join(repo, `p${index}.txt`), `${index}\n`)
+      await ctx.git.checkpointCreate(repo, { series: 'prune-session', index, label: `p${index}` })
+    }
+    const listed = await ctx.git.checkpoints(repo, 'prune-session')
+    expect(listed.checkpoints.map(cp => cp.index)).toEqual([4, 3])
+  }, 180_000)
+
+  it('checkpoints an unborn repository', async () => {
+    const ctx = await setup()
+    const unborn = join(scratch, 'unborn')
+    mkdirSync(unborn)
+    await exec('git', ['init', '-b', 'main'], { cwd: unborn })
+    await exec('git', ['config', 'core.autocrlf', 'false'], { cwd: unborn })
+    writeFileSync(join(unborn, 'first.txt'), 'one\n')
+    const created = await ctx.git.checkpointCreate(unborn, { series: 'unborn-session', index: 1, label: 'start' })
+    expect(created.hash).not.toBe('')
+    const listed = await ctx.git.checkpoints(unborn, 'unborn-session')
+    expect(listed.checkpoints).toHaveLength(1)
+    writeFileSync(join(unborn, 'first.txt'), 'two\n')
+    await ctx.git.checkpointRestore(unborn, { series: 'unborn-session', index: 1 })
+    const { readFileSync } = await import('node:fs')
+    expect(readFileSync(join(unborn, 'first.txt'), 'utf8')).toBe('one\n')
+  }, 120_000)
+})

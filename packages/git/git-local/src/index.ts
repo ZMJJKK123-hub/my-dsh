@@ -12,6 +12,9 @@
  * @module @dsh-custom/dsh-git-local
  */
 
+import { mkdtemp, rm } from 'node:fs/promises'
+import { tmpdir } from 'node:os'
+import { join } from 'node:path'
 import type { Context } from '@deepseek-ai/cordis'
 import z from '@deepseek-ai/schemastery'
 import type { SandboxPolicy, SandboxProvider } from '@deepseek-ai/dsh-sandbox'
@@ -19,8 +22,10 @@ import type {} from '@deepseek-ai/dsh-sandbox-policy'
 import type {} from '@deepseek-ai/dsh-subprocess'
 import { GitError, GitService } from '@dsh-custom/dsh-git'
 import type {
-  GitCommitOptions, GitCommitResult, GitDiffOptions, GitLogOptions, GitPushOptions,
-  GitPushResult, GitStageResult, GitStageSelection,
+  GitCheckpoint, GitCheckpointCreateOptions, GitCheckpointListResult,
+  GitCheckpointRestoreOptions, GitCheckpointRestoreResult, GitCommitOptions, GitCommitResult,
+  GitDiffOptions, GitLogOptions, GitPushOptions, GitPushResult, GitStageResult,
+  GitStageSelection,
 } from '@dsh-custom/dsh-git'
 import { parseBranches, parseLog, parseStatusZ } from './parse.ts'
 import { runGitCommand, type GitRunResult } from './run.ts'
@@ -41,12 +46,31 @@ export interface Config {
   graceMs?: number
   /** Confine commands under the standing sandbox policy; false runs everything unconfined. */
   confine?: boolean
+  /** Checkpoints kept per series; creating prunes beyond this bound. */
+  checkpointKeepLast?: number
 }
 
 type ResolvedConfig = Required<Config>
 
 const BRANCHES_FORMAT = '%(refname:short)%00%(HEAD)%00%(upstream:short)%00%(objectname:short)'
 const LOG_FORMAT = '%H%x1f%h%x1f%an%x1f%aI%x1f%s%x1e'
+
+/** Ref namespace every checkpoint lives under; HEAD, branches, and the user's index stay untouched. */
+const CHECKPOINT_REF_PREFIX = 'refs/dsh/checkpoints'
+
+/** Fixed synthetic identity for shadow commits: they are host artifacts, not user commits. */
+const CHECKPOINT_AUTHOR = 'dsh-checkpoint'
+const CHECKPOINT_EMAIL = 'dsh-checkpoint@local'
+
+/** Sanitize a series key into a refname-safe segment. */
+function checkpointSeries(series: string): string {
+  return series.replace(/[^A-Za-z0-9._-]+/g, '-')
+}
+
+/** The ref one checkpoint lives at; the zero-padded ordinal keeps refname order numeric. */
+function checkpointRef(series: string, index: number): string {
+  return `${CHECKPOINT_REF_PREFIX}/${series}/${String(index).padStart(6, '0')}`
+}
 
 /**
  * Throw the honest failure for one finished-but-unsuccessful run.
@@ -74,6 +98,7 @@ export class LocalGitService extends GitService {
     maxOutputBytes: z.number().default(65_536),
     graceMs: z.number().default(2_500),
     confine: z.boolean().default(true),
+    checkpointKeepLast: z.number().default(50),
   })
 
   readonly resolvedConfig: ResolvedConfig
@@ -208,19 +233,33 @@ export class LocalGitService extends GitService {
    * a workspace-write policy confines writes to the repository.
    */
   private async write(cwd: string, argv: readonly string[], signal?: AbortSignal): Promise<void> {
-    const root = await this.resolveRoot(cwd, signal)
-    if (root === undefined) throw new GitError(`not a git repository: ${cwd}`, 128, '')
+    await this.runEnv(cwd, argv, {}, signal)
+  }
+
+  /**
+   * Run one confined git command with explicit environment entries (the
+   * checkpoint plumbing's temp index and synthetic identity) and return its
+   * output; a nonzero exit is the same honest failure as {@link write}.
+   */
+  private async runEnv(
+    cwd: string,
+    argv: readonly string[],
+    env: Readonly<Record<string, string>>,
+    signal?: AbortSignal,
+  ): Promise<GitRunResult> {
     const gitPath = await this.executable(signal)
     const result = await runGitCommand(this.ctx, gitPath, {
       argv: ['-c', 'core.quotepath=false', ...argv],
-      cwd: root,
+      cwd,
       timeoutMs: this.resolvedConfig.timeoutMs,
       maxOutputBytes: this.resolvedConfig.maxOutputBytes,
       graceMs: this.resolvedConfig.graceMs,
       signal,
-      sandbox: this.confinement(root),
+      env,
+      sandbox: this.confinement(cwd),
     })
     if (result.exitCode !== 0 || result.timedOut || result.aborted) failRun(argv[0] ?? 'git', result)
+    return result
   }
 
   /** The cumulative staged path list after a staging mutation. */
@@ -293,6 +332,118 @@ export class LocalGitService extends GitService {
       branch: branch ?? summary.branch ?? 'HEAD',
       setUpstream,
     }
+  }
+
+  /** Read one series' checkpoints, newest (highest ordinal) first. */
+  private async checkpointList(cwd: string, series: string, signal?: AbortSignal): Promise<readonly GitCheckpoint[]> {
+    const root = await this.resolveRoot(cwd, signal)
+    if (root === undefined) throw new GitError(`not a git repository: ${cwd}`, 128, '')
+    const format = '%(refname)%00%(objectname)%00%(objectname:short)%00%(committerdate:iso8601-strict)%00%(contents:subject)'
+    const result = await this.read(
+      root,
+      ['for-each-ref', '--sort=-refname', `--format=${format}`, `${CHECKPOINT_REF_PREFIX}/${series}`],
+      this.resolvedConfig.maxOutputBytes,
+      signal,
+    )
+    if (result.exitCode !== 0 || result.timedOut || result.aborted) failRun('for-each-ref', result)
+    const checkpoints: GitCheckpoint[] = []
+    for (const line of result.stdout.split('\n')) {
+      if (line === '') continue
+      const [ref, hash, shortHash, date, subject] = line.split('\0')
+      const ordinal = ref?.split('/').at(-1)
+      if (hash === undefined || shortHash === undefined || date === undefined || ordinal === undefined) continue
+      checkpoints.push({ series, index: Number(ordinal), hash, shortHash, label: subject ?? '', date })
+    }
+    return checkpoints
+  }
+
+  /** Prune the series to the configured keep-last bound, oldest first. */
+  private async pruneCheckpoints(root: string, series: string, signal?: AbortSignal): Promise<void> {
+    const listed = await this.checkpointList(root, series, signal)
+    for (const checkpoint of listed.slice(this.resolvedConfig.checkpointKeepLast)) {
+      await this.runEnv(root, ['update-ref', '-d', checkpointRef(series, checkpoint.index)], {}, signal)
+    }
+  }
+
+  override async checkpointCreate(
+    cwd: string,
+    options: GitCheckpointCreateOptions,
+    signal?: AbortSignal,
+  ): Promise<GitCheckpoint> {
+    const series = checkpointSeries(options.series)
+    if (options.series.trim() === '' || !/^[A-Za-z0-9._-]+$/.test(series)) {
+      throw new GitError(`invalid checkpoint series "${options.series}"`, null, '')
+    }
+    const label = options.label.trim() === '' ? `checkpoint ${options.index}` : options.label
+    const root = await this.resolveRoot(cwd, signal)
+    if (root === undefined) throw new GitError(`not a git repository: ${cwd}`, 128, '')
+    const scratch = await mkdtemp(join(tmpdir(), 'dsh-git-cp-'))
+    try {
+      // The temp index captures the whole work tree as it stands — untracked
+      // files included, ignored files excluded by git's own rules.
+      const env = {
+        GIT_INDEX_FILE: join(scratch, 'index'),
+        GIT_AUTHOR_NAME: CHECKPOINT_AUTHOR,
+        GIT_AUTHOR_EMAIL: CHECKPOINT_EMAIL,
+        GIT_COMMITTER_NAME: CHECKPOINT_AUTHOR,
+        GIT_COMMITTER_EMAIL: CHECKPOINT_EMAIL,
+      }
+      await this.runEnv(root, ['add', '--all'], env, signal)
+      const tree = (await this.runEnv(root, ['write-tree'], env, signal)).stdout.trim()
+      if (tree === '') throw new GitError('git write-tree produced no tree', null, '')
+      const hash = (await this.runEnv(root, ['commit-tree', tree, '-m', label], env, signal)).stdout.trim()
+      if (hash === '') throw new GitError('git commit-tree produced no commit', null, '')
+      await this.runEnv(root, ['update-ref', checkpointRef(series, options.index), hash], {}, signal)
+      const date = (await this.runEnv(root, ['show', '-s', '--format=%cI', hash], {}, signal)).stdout.trim()
+      await this.pruneCheckpoints(root, series, signal)
+      return { series, index: options.index, hash, shortHash: hash.slice(0, 7), label, date }
+    } finally {
+      await rm(scratch, { recursive: true, force: true })
+    }
+  }
+
+  override async checkpoints(cwd: string, series: string, signal?: AbortSignal): Promise<GitCheckpointListResult> {
+    return { checkpoints: await this.checkpointList(cwd, checkpointSeries(series), signal) }
+  }
+
+  override async checkpointRestore(
+    cwd: string,
+    options: GitCheckpointRestoreOptions,
+    signal?: AbortSignal,
+  ): Promise<GitCheckpointRestoreResult> {
+    const series = checkpointSeries(options.series)
+    const root = await this.resolveRoot(cwd, signal)
+    if (root === undefined) throw new GitError(`not a git repository: ${cwd}`, 128, '')
+    const ref = checkpointRef(series, options.index)
+    const resolved = await this.read(root, ['rev-parse', ref], this.resolvedConfig.maxOutputBytes, signal)
+    if (resolved.exitCode !== 0 || resolved.timedOut || resolved.aborted) failRun('rev-parse', resolved)
+    const hash = resolved.stdout.trim()
+    if (hash === '') throw new GitError(`checkpoint ${series}/${options.index} not found`, 128, '')
+
+    // Explicit paths restore only those present in the captured tree; the
+    // whole-tree restore covers everything the checkpoint tracked. Files
+    // created after the checkpoint are never touched (restore is corrective,
+    // not destructive).
+    const paths = options.paths?.filter(path => path.trim() !== '') ?? []
+    let restored: readonly string[] = []
+    if (paths.length > 0) {
+      const listed = await this.read(
+        root,
+        ['ls-tree', '-r', '--name-only', '-z', hash, '--', ...paths],
+        this.resolvedConfig.maxOutputBytes,
+        signal,
+      )
+      if (listed.exitCode !== 0 || listed.timedOut || listed.aborted) failRun('ls-tree', listed)
+      restored = listed.stdout.split('\0').filter(path => path !== '')
+    }
+    if (paths.length === 0) {
+      await this.write(root, ['restore', '--source', hash, '--worktree', '--', '.'], signal)
+    } else if (restored.length > 0) {
+      await this.write(root, ['restore', '--source', hash, '--worktree', '--', ...restored], signal)
+    }
+    const checkpoint = (await this.checkpointList(root, series, signal)).find(entry => entry.index === options.index)
+      ?? { series, index: options.index, hash, shortHash: hash.slice(0, 7), label: '', date: '' }
+    return { checkpoint, restored }
   }
 }
 

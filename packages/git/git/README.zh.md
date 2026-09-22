@@ -6,7 +6,7 @@
 
 ## 工作方式
 
-- 声明抽象 `GitService`（`ctx.git`）：`resolveRoot`、`status`、`diff`、`log`、`branches`（事实）与 `stage`、`unstage`、`commit`、`push`（变更）。
+- 声明抽象 `GitService`（`ctx.git`）：`resolveRoot`、`status`、`diff`、`log`、`branches`（事实）；`stage`、`unstage`、`commit`、`push`（变更）；以及 `checkpointCreate`、`checkpoints`、`checkpointRestore`（`refs/dsh/checkpoints/<series>/<index>` 下的影子检查点，绝不触碰 HEAD 与用户索引）。
 - 每个方法按调用传入仓库目录（由调用方解析会话工作区）。
 - 事实方法绝不写仓库。变更方法必须执行调用方的常驻文件策略：只读策略以 `denied` 标记置位的 `GitError` 拒绝。
 - git 失败以 `GitError` 抛出（含退出码、stderr，以及沙箱策略拦截时的 `denied` 标记）。
