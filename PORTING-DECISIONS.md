@@ -2,7 +2,7 @@
 
 > 背景：将 ZCode（`C:/Users/59639/Desktop/ZCode`，AI 编程工作台 monorepo）的能力移植到本仓库（DeepSeek Harness 个人 fork）。
 > 本文件是**唯一拍板记录**，后续会话直接读本文件恢复上下文，不需要用户重述决定。
-> 状态：**全部拍板完毕，实现中**。P1 Git 工具链✅、P2 checkpoint/回滚✅、**P3-a cron 表+调度器+Vixie 解析器✅（a3d33f3 + 7956e9b + 3768480，17 测试；ctx.automations，execute 可覆写）**。下一步 P3-b：webhook 式真实执行器（packages/schedule/automations 加 runner：agentPresets/permissionPresets/workspaceRegistry/agents/agentDefaultModel/sessionTitle 六服务，参考 packages/webhook/webhook/src/session.ts 的 createWebhookSession 配方）+ base bundle 注册；再 P3-c Remote+客户端面板。
+> 状态：**全部拍板完毕，实现中**。P1 Git 工具链✅、P2 checkpoint/回滚✅、**P3 机器级 cron 定时任务✅**（表+调度器+Vixie 解析器 a3d33f3 → webhook 式执行器+bundle 注册 46b6cbc → automationsRemote+客户端定时任务面板 77f2322；73 测试全绿）。下一步：P4 多品牌主题（dsh 已有 ctx.theme slot + maid-atelier 皮肤先例，主要补主题资产与配色 token）。
 > 实现节奏约定（用户要求）：一次只做一个小任务、小步走；每完成一小步就 git commit 便于回撤；严格遵循 dsh 现有插件架构；插件直接加进树，不做商店管理 UI。
 > 最后更新：2026-09-22
 
