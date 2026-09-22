@@ -1602,6 +1602,9 @@ importers:
       '@dsh-custom/dsh-change-monitor':
         specifier: workspace:^
         version: link:../../session/change-monitor
+      '@dsh-custom/dsh-checkpoint-watcher':
+        specifier: workspace:^
+        version: link:../../git/checkpoint-watcher
       '@dsh-custom/dsh-git':
         specifier: workspace:^
         version: link:../../git/git
@@ -6387,6 +6390,28 @@ importers:
       '@deepseek-ai/dsh-tools':
         specifier: workspace:^
         version: link:../../core/tools
+
+  packages/git/checkpoint-watcher:
+    dependencies:
+      '@deepseek-ai/schemastery':
+        specifier: link:../../../vendor/schemastery
+        version: link:../../../vendor/schemastery
+    devDependencies:
+      '@deepseek-ai/cordis':
+        specifier: workspace:*
+        version: link:../../../vendor/cordis
+      '@deepseek-ai/dsh-session':
+        specifier: workspace:*
+        version: link:../../core/session
+      '@deepseek-ai/dsh-subprocess-local':
+        specifier: workspace:*
+        version: link:../../subprocess/subprocess-local
+      '@dsh-custom/dsh-git':
+        specifier: workspace:*
+        version: link:../git
+      '@dsh-custom/dsh-git-local':
+        specifier: workspace:*
+        version: link:../git-local
 
   packages/git/git:
     devDependencies:

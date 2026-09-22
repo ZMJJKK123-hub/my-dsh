@@ -118,6 +118,7 @@
     "@deepseek-ai/dsh-web-search-deepseek": "workspace:^",
     "@deepseek-ai/dsh-workflow-worker-thread": "workspace:^",
     "@dsh-custom/dsh-change-monitor": "workspace:^",
+    "@dsh-custom/dsh-checkpoint-watcher": "workspace:^",
     "@dsh-custom/dsh-git": "workspace:^",
     "@dsh-custom/dsh-git-local": "workspace:^",
     "@dsh-custom/dsh-git-remote": "workspace:^",

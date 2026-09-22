@@ -266,6 +266,9 @@
         provider: deepseek-official
         model: deepseek-v4-flash
 
+    - id: checkpoint-watcher
+      name: '@dsh-custom/dsh-checkpoint-watcher'
+
     - id: tool-git
       name: '@dsh-custom/dsh-tool-git'
 
