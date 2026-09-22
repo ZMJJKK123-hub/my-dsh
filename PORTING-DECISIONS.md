@@ -2,7 +2,7 @@
 
 > 背景：将 ZCode（`C:/Users/59639/Desktop/ZCode`，AI 编程工作台 monorepo）的能力移植到本仓库（DeepSeek Harness 个人 fork）。
 > 本文件是**唯一拍板记录**，后续会话直接读本文件恢复上下文，不需要用户重述决定。
-> 状态：**全部拍板完毕，实现中**。**P1 Git 工具链已全部完成**（模型侧 8 工具 + 宿主 Remote + Web 面板 + AI commit message，共 6 个功能 commit：346a22a / 2a2531b / e95d53b / d04b5f6 / 888dec4 / fbec1d9，40 测试全绿）。下一步：P2 Git checkpoint / 文件回滚（参考 ZCode gitCheckpointStore；dsh 侧可基于 turn change set 或 git stash/影子提交实现，注意 durable session event 语义）。
+> 状态：**全部拍板完毕，实现中**。P1 Git 工具链✅、**P2 Git checkpoint/文件回滚✅**（影子检查点 572b2da + 面板恢复 ab2e57d + 逐回合自动打点 d3a3577；共 49 测试）。下一步：P3 机器级 cron 定时任务（参考 ZCode automationRepo 的 claim 派发模式；dsh 侧做 host 级 scheduler 插件 + storage 持久化 + 到期拉起 session，无 off-peak）。
 > 实现节奏约定（用户要求）：一次只做一个小任务、小步走；每完成一小步就 git commit 便于回撤；严格遵循 dsh 现有插件架构；插件直接加进树，不做商店管理 UI。
 > 最后更新：2026-09-22
 
