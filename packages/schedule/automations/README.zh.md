@@ -9,7 +9,7 @@
 - `ctx.automations` 提供 `list` / `create` / `update` / `remove` / `runNow`；`create` 校验五字段 cron 表达式（`src/cron.ts` 中的纯 Vixie 语义解析器，本地时间）并计算首次运行时间。
 - 调度器每 `tickMs` 轮询：到期且启用的记录先推进 `nextRunAt`（运行中崩溃绝不会重触发同一分钟），再触发一次；in-flight 集合防止慢运行在下一轮堆积；超过 `misfireGraceMs` 的过期运行按"错过"跳过而非补发。
 - 任务表经 `dsh-atomic-write` 原子持久化于 `<storeRoot>/tasks.json`；运行结果（`ok`/`error` + 信息）落回记录。
-- 执行步骤是可覆写的 `execute` 方法：本包默认抛出未装配错误，由组合进宿主的 agent 会话运行器替换；测试驱动录制子类。
+- 包默认导出为 `RunnerAutomationService`，其 `execute` 按 webhook 配方执行：解析预设（权限默认 `workspace-write`，agent 预设取注册表默认）、创建工作区、创建以任务命名的 agent 会话、提交 prompt，接纳失败时回滚挂接。基础 `AutomationService`（具名导出）保留未装配执行器供测试使用。
 
 ## 配置
 
@@ -29,4 +29,4 @@
 
 - 仅五个数字字段：无月/日名称、无 `@` 简写、无按用户的 CRON_TZ——宿主本地时间即计划时间。
 - 分钟级分辨率；一轮内每个到期记录至多触发一次，错过的分钟跳过不补。
-- 运行器（agent 会话创建）组合在宿主 bundle 内，不在本包；装配前默认 `execute` 抛错。
+- 运行器在 prompt 被接纳后把所有权交给会话生命周期；它不追踪回合完成（运行结果记录的是接纳，不是模型的回答）。

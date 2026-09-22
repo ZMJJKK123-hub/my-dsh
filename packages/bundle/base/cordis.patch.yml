@@ -269,6 +269,9 @@
     - id: checkpoint-watcher
       name: '@dsh-custom/dsh-checkpoint-watcher'
 
+    - id: automations
+      name: '@dsh-custom/dsh-automations'
+
     - id: tool-git
       name: '@dsh-custom/dsh-tool-git'
 

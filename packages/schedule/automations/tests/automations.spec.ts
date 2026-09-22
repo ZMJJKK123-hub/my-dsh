@@ -3,7 +3,7 @@ import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { afterAll, describe, expect, it } from 'vitest'
 import { Context } from '@deepseek-ai/cordis'
-import AutomationService, { AutomationStore, CronError } from '../src/index.ts'
+import { AutomationService, AutomationStore, CronError } from '../src/index.ts'
 import type { AutomationRecord } from '../src/index.ts'
 
 const scratch = mkdtempSync(join(tmpdir(), 'dsh-automations-spec-'))
