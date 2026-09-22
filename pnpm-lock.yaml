@@ -1608,6 +1608,9 @@ importers:
       '@dsh-custom/dsh-git-local':
         specifier: workspace:^
         version: link:../../git/git-local
+      '@dsh-custom/dsh-git-remote':
+        specifier: workspace:^
+        version: link:../../git/git-remote
       '@dsh-custom/dsh-tool-git':
         specifier: workspace:^
         version: link:../../git/tool-git
@@ -6357,6 +6360,27 @@ importers:
       '@dsh-custom/dsh-git':
         specifier: workspace:*
         version: link:../git
+
+  packages/git/git-remote:
+    devDependencies:
+      '@deepseek-ai/cordis':
+        specifier: workspace:*
+        version: link:../../../vendor/cordis
+      '@deepseek-ai/dsh-session':
+        specifier: workspace:*
+        version: link:../../core/session
+      '@deepseek-ai/dsh-subprocess-local':
+        specifier: workspace:*
+        version: link:../../subprocess/subprocess-local
+      '@deepseek-ai/dsh-typert-protocol':
+        specifier: workspace:*
+        version: link:../../typert/protocol
+      '@dsh-custom/dsh-git':
+        specifier: workspace:*
+        version: link:../git
+      '@dsh-custom/dsh-git-local':
+        specifier: workspace:*
+        version: link:../git-local
 
   packages/git/tool-git:
     dependencies:
