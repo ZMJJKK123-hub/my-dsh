@@ -2,7 +2,7 @@
 
 > 背景：将 ZCode（`C:/Users/59639/Desktop/ZCode`，AI 编程工作台 monorepo）的能力移植到本仓库（DeepSeek Harness 个人 fork）。
 > 本文件是**唯一拍板记录**，后续会话直接读本文件恢复上下文，不需要用户重述决定。
-> 状态：**全部拍板完毕，实现中**。当前进度：P1 Git 工具链（进行中）。
+> 状态：**全部拍板完毕，实现中**。当前进度：P1 Git 工具链 —— 模型侧完成（8 工具，commits 346a22a/2a2531b/e95d53b），宿主 Remote 完成（git-remote，commit d04b5f6，生成式客户端挂载模块已产出）；下一步 P1-e-2 客户端 ui-git 面板（模板：packages/client/ui-sidebar-files + ui-change-monitor；挂载方式 ctx.remote.$mount(gitRemoteClient) + sidebarRightTabs 注册）。
 > 实现节奏约定（用户要求）：一次只做一个小任务、小步走；每完成一小步就 git commit 便于回撤；严格遵循 dsh 现有插件架构；插件直接加进树，不做商店管理 UI。
 > 最后更新：2026-09-22
 
