@@ -76,7 +76,7 @@ export class AutomationService extends Service {
   })
 
   private readonly resolved: ResolvedConfig
-  private readonly store: AutomationStore
+  protected readonly store: AutomationStore
   private readonly inFlight = new Set<string>()
   private loaded = false
 
@@ -194,7 +194,7 @@ export class AutomationService extends Service {
   /**
    * One scheduler pass: advance or fire every due enabled record.
    */
-  private async tick(): Promise<void> {
+  protected async tick(): Promise<void> {
     await this.ensureLoaded()
     const now = Date.now()
     for (const record of this.store.list()) {

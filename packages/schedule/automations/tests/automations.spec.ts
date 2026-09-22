@@ -9,17 +9,22 @@ import type { AutomationRecord } from '../src/index.ts'
 const scratch = mkdtempSync(join(tmpdir(), 'dsh-automations-spec-'))
 const WORKSPACE = join(scratch, 'work')
 
-/** The scheduler internals the tests reach (private on the service). */
-interface Internals {
-  store: AutomationStore
-  tick(): Promise<void>
+/** Test surface over the protected scheduler internals. */
+class TestService extends AutomationService {
+  exposeStore(): AutomationStore {
+    return this.store
+  }
+
+  tickNow(): Promise<void> {
+    return this.tick()
+  }
 }
 
 /** The scheduler with a recording executor: no agent is created. */
-class RecordingService extends AutomationService {
+class RecordingService extends TestService {
   readonly runs: AutomationRecord[] = []
   /** Resolves when the executor was entered; the test decides its duration. */
-  private entered?: () => void
+  private entered?: (() => void) | undefined
 
   executeDelayMs = 0
 
@@ -36,11 +41,11 @@ class RecordingService extends AutomationService {
   }
 }
 
-/** Mount a recording scheduler and return it plus its internals. */
-async function setupRecording(root: string, config: Record<string, unknown> = {}): Promise<RecordingService & Internals> {
+/** Mount a recording scheduler. */
+async function setupRecording(root: string, config: Record<string, unknown> = {}): Promise<RecordingService> {
   const ctx = new Context()
   await ctx.plugin(RecordingService, { storeRoot: join(scratch, root), tickMs: 60_000, ...config })
-  return ctx.automations as RecordingService & Internals
+  return ctx.automations as RecordingService
 }
 
 afterAll(() => {
@@ -121,30 +126,30 @@ describe('AutomationService', () => {
     })
     // Pretend the run came due an hour ago.
     const stale: AutomationRecord = {
-      ...service.store.get(created.id)!,
+      ...service.exposeStore().get(created.id)!,
       nextRunAt: new Date(Date.now() - 3_600_000).toISOString(),
     }
-    await service.store.put(stale)
-    await service.tick()
+    await service.exposeStore().put(stale)
+    await service.tickNow()
     expect(service.runs).toHaveLength(0)
-    const advanced = service.store.get(created.id)!
+    const advanced = service.exposeStore().get(created.id)!
     expect(Date.parse(advanced.nextRunAt!)).toBeGreaterThan(Date.now())
   })
 
   it('records a failed run without throwing to the scheduler', async () => {
     const ctx = new Context()
-    class FailingService extends AutomationService {
+    class FailingService extends TestService {
       protected override async execute(): Promise<void> {
         throw new Error('boom')
       }
     }
     await ctx.plugin(FailingService, { storeRoot: join(scratch, 'svc-d'), tickMs: 60_000 })
-    const service = ctx.automations as AutomationService & Internals
+    const service = ctx.automations as FailingService
     const created = await service.create({
       title: 'broken', workspacePath: WORKSPACE, prompt: 'x', cron: '* * * * *',
     })
     await expect(service.runNow(created.id)).rejects.toThrow('boom')
-    const settled = service.store.get(created.id)!
+    const settled = service.exposeStore().get(created.id)!
     expect(settled.lastOutcome).toBe('error')
     expect(settled.lastError).toBe('boom')
   })
