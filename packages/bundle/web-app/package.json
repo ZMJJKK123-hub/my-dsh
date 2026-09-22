@@ -119,6 +119,7 @@
     "@deepseek-ai/schemastery": "workspace:^",
     "@dsh-custom/dsh-client-ui-background": "workspace:^",
     "@dsh-custom/dsh-client-ui-change-monitor": "workspace:^",
+    "@dsh-custom/dsh-client-ui-git": "workspace:^",
     "@dsh-custom/dsh-client-ui-turn-sounds": "workspace:^",
     "@dsh-custom/dsh-client-ui-voice-input": "workspace:^",
     "commander": "^15.0.0",

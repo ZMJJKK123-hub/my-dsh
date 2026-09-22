@@ -282,6 +282,9 @@
     - id: ui-change-monitor
       name: '@dsh-custom/dsh-client-ui-change-monitor'
 
+    - id: ui-git
+      name: '@dsh-custom/dsh-client-ui-git'
+
     - id: ui-voice-input
       name: '@dsh-custom/dsh-client-ui-voice-input'
 

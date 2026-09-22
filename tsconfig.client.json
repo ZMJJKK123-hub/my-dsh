@@ -116,6 +116,7 @@
     { "path": "./packages/client/web" },
     { "path": "./packages/context/file-reference" },
     { "path": "./packages/client/ui-change-monitor" },
+    { "path": "./packages/client/ui-git" },
     { "path": "./packages/client/ui-voice-input" },
     { "path": "./packages/client/ui-background" },
     { "path": "./packages/client/ui-turn-sounds" },

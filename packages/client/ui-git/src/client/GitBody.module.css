@@ -1,0 +1,191 @@
+.panel {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-height: 0;
+  height: 100%;
+  overflow: hidden;
+}
+
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.branch {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+}
+
+.branchIcon {
+  flex: none;
+  opacity: 0.7;
+}
+
+.branchName {
+  font-weight: 600;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.upstream {
+  opacity: 0.6;
+  font-size: 0.9em;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.headerActions {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  flex: none;
+}
+
+.iconAction {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 6px;
+}
+
+.notice {
+  padding: 4px 8px;
+  border-radius: 4px;
+  background: color-mix(in oklab, currentcolor 6%, transparent);
+  font-size: 0.9em;
+}
+
+.note {
+  padding: 8px;
+  opacity: 0.7;
+  font-size: 0.9em;
+}
+
+.hint {
+  padding: 2px 8px;
+  opacity: 0.6;
+  font-size: 0.85em;
+}
+
+.group {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+
+.groupHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 2px 0;
+  font-size: 0.85em;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  opacity: 0.7;
+}
+
+.groupAction {
+  padding: 0 6px;
+  font-size: 0.9em;
+}
+
+.list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.item {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.item.selected .row {
+  background: color-mix(in oklab, currentcolor 8%, transparent);
+}
+
+.row {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+  padding: 2px 6px;
+  border-radius: 4px;
+  text-align: start;
+}
+
+.code {
+  flex: none;
+  font-family: ui-monospace, monospace;
+  font-size: 0.85em;
+  opacity: 0.7;
+  width: 1.2em;
+}
+
+.name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-family: ui-monospace, monospace;
+  font-size: 0.9em;
+}
+
+.gesture {
+  flex: none;
+  width: 20px;
+  height: 20px;
+  line-height: 1;
+  border-radius: 4px;
+}
+
+.commitArea {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 4px 0;
+}
+
+.commitInput {
+  width: 100%;
+  resize: vertical;
+  font: inherit;
+  padding: 4px 6px;
+}
+
+.commitRow {
+  display: flex;
+  justify-content: flex-end;
+}
+
+.primary {
+  padding: 4px 12px;
+  font-weight: 600;
+}
+
+.diffArea {
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+  border-top: 1px solid color-mix(in oklab, currentcolor 15%, transparent);
+  padding-top: 6px;
+}
+
+.patch {
+  margin: 0;
+  padding: 4px 8px;
+  font-family: ui-monospace, monospace;
+  font-size: 0.85em;
+  white-space: pre;
+  overflow: auto;
+}
