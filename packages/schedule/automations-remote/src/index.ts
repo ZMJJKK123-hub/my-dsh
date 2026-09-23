@@ -99,12 +99,12 @@ export class AutomationsRemoteService extends TypertRemoteService {
   }
 
   /**
-   * `automationsRemote.remove`: delete one automation.
+   * `automationsRemote.deleteAutomation`: delete one automation.
    * @param request - the id to remove.
    * @returns an empty value, or the failure the panel renders.
    */
-  @Remote('remove')
-  async remove(request: AutomationIdRequest): Promise<AutomationsRemoteResult<null>> {
+  @Remote('deleteAutomation')
+  async deleteAutomation(request: AutomationIdRequest): Promise<AutomationsRemoteResult<null>> {
     return await answer(async () => {
       await this.ctx.automations.remove(request.id)
       return null

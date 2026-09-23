@@ -51,7 +51,7 @@ describe('AutomationsRemoteService', () => {
     if (fired.ok) return
     expect(fired.error).toContain('no executor')
 
-    const removed = await ctx.automationsRemote.remove({ id: created.value.id })
+    const removed = await ctx.automationsRemote.deleteAutomation({ id: created.value.id })
     expect(removed.ok).toBe(true)
   })
 

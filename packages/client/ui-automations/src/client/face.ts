@@ -18,7 +18,7 @@ export interface AutomationsRemoteFace {
   list(): Promise<RemoteResult<AutomationsRemoteResult<AutomationListView>>>
   create(request: AutomationCreateRequest): Promise<RemoteResult<AutomationsRemoteResult<AutomationView>>>
   update(request: AutomationUpdateRequest): Promise<RemoteResult<AutomationsRemoteResult<AutomationView>>>
-  remove(request: { id: string }): Promise<RemoteResult<AutomationsRemoteResult<null>>>
+  deleteAutomation(request: { id: string }): Promise<RemoteResult<AutomationsRemoteResult<null>>>
   runNow(request: { id: string }): Promise<RemoteResult<AutomationsRemoteResult<null>>>
 }
 
@@ -98,7 +98,7 @@ export function automationsFace(
         mutate(tabId, signal, () => remote.update({ id, enabled }).then(unwrap))
       },
       remove(tabId, id, signal) {
-        mutate(tabId, signal, () => remote.remove({ id }).then(unwrap))
+        mutate(tabId, signal, () => remote.deleteAutomation({ id }).then(unwrap))
       },
       runNow(tabId, id, signal) {
         mutate(tabId, signal, () => remote.runNow({ id }).then(unwrap))
