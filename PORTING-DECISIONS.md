@@ -2,7 +2,7 @@
 
 > 背景：将 ZCode（`C:/Users/59639/Desktop/ZCode`，AI 编程工作台 monorepo）的能力移植到本仓库（DeepSeek Harness 个人 fork）。
 > 本文件是**唯一拍板记录**，后续会话直接读本文件恢复上下文，不需要用户重述决定。
-> 状态：P1✅ P2✅ P3✅ P4✅ P5✅（已内置：base+依赖+自解析） **P6 进行中**（域字段 pinSession/unpinSession df37422；workspace 控制器暴露 + 客户端 pin/unread 渲染待做）。P7 CUA 完全移植待做。
+> 状态：P1✅ P2✅ P3✅ P4✅ P5✅ P6✅（域+注册表 df37422 + 控制器 Remote db14b2a + 测试修复 1e1e56c） **P7-a CUA 确认门+预检✅**（cua-guard 9dd4b72：tools/pre-execute 守卫五个 CUA 工具、平台探测、approval 审批、会话缓存）。**P7-b 悬浮窗+浏览器导入**为后续增强。全部板块完成。
 > 实现节奏约定（用户要求）：一次只做一个小任务、小步走；每完成一小步就 git commit 便于回撤；严格遵循 dsh 现有插件架构；插件直接加进树，不做商店管理 UI。
 > 最后更新：2026-09-22
 
