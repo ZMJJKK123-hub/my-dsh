@@ -336,7 +336,7 @@ describe('WorkspaceRegistry lifecycle and bootstrap', () => {
       [firstId, record(first, [], '2026-07-24T00:00:00.000Z')],
     ]
     const prior = await harness({
-      pool: storedPool(entries, { initialized: false, workspaceIds: [secondId, firstId] }),
+      pool: storedPool(entries, { initialized: false, workspaceIds: [secondId, firstId], pinnedSessionIds: [] }),
     })
     expect(prior.registry.list().map(workspace => workspace.id)).toEqual([secondId, firstId])
 
@@ -768,7 +768,7 @@ describe('header-validated membership projection', () => {
     const id = WorkspaceId('00000000-0000-4000-8000-000000000001')
     const pool = storedPool(
       [[id, record(owned, ['good', 'mismatch', 'missing'])]],
-      { initialized: true, workspaceIds: [id] },
+      { initialized: true, workspaceIds: [id], pinnedSessionIds: [] },
     )
     const result = await harness({
       pool,
@@ -796,31 +796,31 @@ describe('header-validated membership projection', () => {
     const secondId = '00000000-0000-4000-8000-000000000003'
     const duplicateSession = storedPool(
       [[firstId, record(first, ['dup'])], [secondId, record(second, ['dup'])]],
-      { initialized: true, workspaceIds: [WorkspaceId(firstId), WorkspaceId(secondId)] },
+      { initialized: true, workspaceIds: [WorkspaceId(firstId), WorkspaceId(secondId)], pinnedSessionIds: [] },
     )
     await expect(harness({ pool: duplicateSession })).rejects.toThrow(/accounted/)
 
     const duplicatePath = storedPool(
       [[firstId, record(first, [])], [secondId, record(first, [])]],
-      { initialized: true, workspaceIds: [WorkspaceId(firstId), WorkspaceId(secondId)] },
+      { initialized: true, workspaceIds: [WorkspaceId(firstId), WorkspaceId(secondId)], pinnedSessionIds: [] },
     )
     await expect(harness({ pool: duplicatePath })).rejects.toThrow(/claimed/)
 
     const orphan = storedPool(
       [[firstId, record(first, [])], [secondId, record(second, [])]],
-      { initialized: true, workspaceIds: [WorkspaceId(firstId)] },
+      { initialized: true, workspaceIds: [WorkspaceId(firstId)], pinnedSessionIds: [] },
     )
     await expect(harness({ pool: orphan })).rejects.toThrow(/absent from registry order/)
 
     const repeated = storedPool(
       [[firstId, record(first, [])]],
-      { initialized: true, workspaceIds: [WorkspaceId(firstId), WorkspaceId(firstId)] },
+      { initialized: true, workspaceIds: [WorkspaceId(firstId), WorkspaceId(firstId)], pinnedSessionIds: [] },
     )
     await expect(harness({ pool: repeated })).rejects.toThrow(/repeats workspace/)
 
     const missing = storedPool(
       [],
-      { initialized: true, workspaceIds: [WorkspaceId(firstId)] },
+      { initialized: true, workspaceIds: [WorkspaceId(firstId)], pinnedSessionIds: [] },
     )
     await expect(harness({ pool: missing })).rejects.toThrow(/references missing workspace/)
   })
@@ -845,6 +845,7 @@ describe('header-validated membership projection', () => {
       {
         initialized: true,
         workspaceIds: [],
+        pinnedSessionIds: [],
         pendingMutation: { operation: 'create', workspaceId: createId },
       },
     )
@@ -858,6 +859,7 @@ describe('header-validated membership projection', () => {
       {
         initialized: true,
         workspaceIds: [],
+        pinnedSessionIds: [],
         pendingMutation: { operation: 'delete', workspaceId: deleteId },
       },
     )
@@ -871,6 +873,7 @@ describe('header-validated membership projection', () => {
       {
         initialized: true,
         workspaceIds: [deleteId],
+        pinnedSessionIds: [],
         pendingMutation: { operation: 'delete', workspaceId: deleteId },
       },
     )
@@ -970,7 +973,7 @@ describe('registry-global session archive', () => {
     const legacyId = WorkspaceId('00000000-0000-4000-8000-00000000000a')
     const legacy = storedPool(
       [[legacyId, record(dir, [])]],
-      { initialized: true, workspaceIds: [legacyId] },
+      { initialized: true, workspaceIds: [legacyId], pinnedSessionIds: [] },
     )
     const upgraded = await harness({ pool: legacy })
     expect(upgraded.registry.archivedSessionIds).toEqual([])
