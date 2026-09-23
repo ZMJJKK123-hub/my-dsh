@@ -9023,6 +9023,25 @@ importers:
         specifier: workspace:^
         version: link:../../../native/landlock-run/packages/entry
 
+  packages/shell/cua-guard:
+    dependencies:
+      '@deepseek-ai/schemastery':
+        specifier: link:../../../vendor/schemastery
+        version: link:../../../vendor/schemastery
+    devDependencies:
+      '@deepseek-ai/cordis':
+        specifier: workspace:*
+        version: link:../../../vendor/cordis
+      '@deepseek-ai/dsh-shell':
+        specifier: workspace:*
+        version: link:../shell
+      '@deepseek-ai/dsh-tools':
+        specifier: workspace:*
+        version: link:../../core/tools
+      '@deepseek-ai/dsh-user-approval':
+        specifier: workspace:*
+        version: link:../../interaction/user-approval
+
   packages/shell/pwsh-local:
     dependencies:
       '@deepseek-ai/schemastery':

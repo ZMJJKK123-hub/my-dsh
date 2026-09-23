@@ -287,6 +287,9 @@
     - id: browser-control
       name: dsh-browser-control
 
+    - id: cua-guard
+      name: '@dsh-custom/dsh-cua-guard'
+
     - id: fs-observation-policy
       name: '@deepseek-ai/dsh-fs-observation-policy'
 

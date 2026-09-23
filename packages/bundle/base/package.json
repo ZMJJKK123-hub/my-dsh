@@ -120,6 +120,7 @@
     "@dsh-custom/dsh-automations": "workspace:^",
     "@dsh-custom/dsh-automations-remote": "workspace:^",
     "@dsh-custom/dsh-change-monitor": "workspace:^",
+    "@dsh-custom/dsh-cua-guard": "workspace:^",
     "@dsh-custom/dsh-checkpoint-watcher": "workspace:^",
     "@dsh-custom/dsh-git": "workspace:^",
     "@dsh-custom/dsh-git-local": "workspace:^",
