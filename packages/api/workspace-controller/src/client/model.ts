@@ -7,6 +7,8 @@ import type { RemoteFailure, RemoteResult, TypertClientRemote } from '@deepseek-
 import type {
   WorkspaceArchiveSessionRequest,
   WorkspaceArchiveValue,
+  WorkspacePinSessionRequest,
+  WorkspacePinValue,
   WorkspaceBaseline,
   WorkspaceCreateRequest,
   WorkspaceCreateValue,
@@ -29,6 +31,8 @@ export interface WorkspaceSnapshot {
   readonly items: readonly WorkspaceView[]
   /** Complete registry-global archive set in Host order. */
   readonly archivedSessionIds: WorkspaceArchiveValue['archivedSessionIds']
+  /** Complete registry-global pin set in Host order. */
+  readonly pinnedSessionIds: WorkspacePinValue['pinnedSessionIds']
   readonly state: 'idle' | 'loading' | 'error'
   readonly phase: WorkspaceListPhase
   readonly error: RemoteFailure | null
@@ -46,6 +50,8 @@ export interface WorkspaceFollowSink {
   replaceOrder(workspaceIds: readonly WorkspaceId[]): void
   /** Replace the complete archived Session set. */
   replaceArchived(sessionIds: WorkspaceArchiveValue['archivedSessionIds']): void
+  /** Replace the complete pinned Session set. */
+  replacePinned(sessionIds: WorkspacePinValue['pinnedSessionIds']): void
 }
 
 /**
@@ -54,6 +60,7 @@ export interface WorkspaceFollowSink {
 export class ClientWorkspaceModel implements WorkspaceFollowSink {
   private items: readonly WorkspaceView[] = []
   private archivedSessionIds: WorkspaceArchiveValue['archivedSessionIds'] = []
+  private pinnedSessionIds: WorkspacePinValue['pinnedSessionIds'] = []
   private state: WorkspaceSnapshot['state'] = 'loading'
   private phase: WorkspaceListPhase = 'pending'
   private error: RemoteFailure | null = null
@@ -170,6 +177,22 @@ export class ClientWorkspaceModel implements WorkspaceFollowSink {
     return result
   }
 
+  async pinSession(
+    sessionId: WorkspacePinSessionRequest['sessionId'],
+  ): Promise<RemoteResult<WorkspacePinValue>> {
+    const result = await this.remote.pinSession({ sessionId })
+    if (result.ok) this.installPinned(result.value.pinnedSessionIds)
+    return result
+  }
+
+  async unpinSession(
+    sessionId: WorkspacePinSessionRequest['sessionId'],
+  ): Promise<RemoteResult<WorkspacePinValue>> {
+    const result = await this.remote.unpinSession({ sessionId })
+    if (result.ok) this.installPinned(result.value.pinnedSessionIds)
+    return result
+  }
+
   /**
    * Replace the projection from one complete stream-generation baseline.
    * @param baseline - complete Workspace and archive projection.
@@ -178,6 +201,7 @@ export class ClientWorkspaceModel implements WorkspaceFollowSink {
     this.orderFrameGeneration++
     this.installViews(baseline.items)
     this.installArchived(baseline.archivedSessionIds)
+    this.installPinned(baseline.pinnedSessionIds)
     this.state = 'idle'
     this.phase = 'ready'
     this.error = null
@@ -249,10 +273,21 @@ export class ClientWorkspaceModel implements WorkspaceFollowSink {
     return {
       items: this.items,
       archivedSessionIds: this.archivedSessionIds,
+      pinnedSessionIds: this.pinnedSessionIds,
       state: this.state,
       phase: this.phase,
       error: this.error,
     }
+  }
+
+  private installPinned(pinnedSessionIds: WorkspacePinValue['pinnedSessionIds']): void {
+    this.pinnedSessionIds = [...pinnedSessionIds]
+    this.invalidate()
+  }
+
+  /** Replace the pinned Session set from the current follow generation. */
+  replacePinned(pinnedSessionIds: WorkspacePinValue['pinnedSessionIds']): void {
+    this.installPinned(pinnedSessionIds)
   }
 
   private installArchived(archivedSessionIds: WorkspaceArchiveValue['archivedSessionIds']): void {

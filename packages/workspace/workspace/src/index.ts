@@ -234,6 +234,14 @@ export class WorkspaceRegistry extends Service {
   }
 
   /**
+   * The pinned session ids in pin order (read-only projection).
+   * @returns the pinned session ids.
+   */
+  get pinnedSessionIds(): readonly SessionId[] {
+    return this.requireState().pinnedSessionIds
+  }
+
+  /**
    * Archive one session durably. The session must exist (live or in session
    * persistence); its workspace accounting — or lack of one — is irrelevant.
    * An already archived id resolves without writing.

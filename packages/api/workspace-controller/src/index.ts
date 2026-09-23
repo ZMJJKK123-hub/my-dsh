@@ -8,6 +8,8 @@ import { WorkspaceFeed } from './feed.ts'
 import type {
   WorkspaceArchiveSessionRequest,
   WorkspaceArchiveValue,
+  WorkspacePinSessionRequest,
+  WorkspacePinValue,
   WorkspaceCreateRequest,
   WorkspaceCreateValue,
   WorkspaceDeleteRequest,
@@ -107,6 +109,26 @@ export class WorkspaceController extends TypertRemoteService {
   @Remote('archiveSession')
   archiveSession(request: WorkspaceArchiveSessionRequest): Promise<WorkspaceArchiveValue> {
     return this.commands.archiveSession(request)
+  }
+
+  /**
+   * Pin one session (pinned sessions sort first in the client).
+   * @param request - Session identity to pin.
+   * @returns the complete resulting pin set.
+   */
+  @Remote('pinSession')
+  pinSession(request: WorkspacePinSessionRequest): Promise<WorkspacePinValue> {
+    return this.commands.pinSession(request)
+  }
+
+  /**
+   * Unpin one session.
+   * @param request - Session identity to unpin.
+   * @returns the complete resulting pin set.
+   */
+  @Remote('unpinSession')
+  unpinSession(request: WorkspacePinSessionRequest): Promise<WorkspacePinValue> {
+    return this.commands.unpinSession(request)
   }
 
   /**

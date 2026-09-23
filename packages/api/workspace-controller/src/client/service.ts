@@ -62,6 +62,8 @@ export interface IWorkspaces {
    * @param sessionId - Session to archive.
    */
   archiveSession(sessionId: SessionId): Promise<void>
+  pinSession(sessionId: SessionId): Promise<void>
+  unpinSession(sessionId: SessionId): Promise<void>
   /**
    * Move a Session within one Workspace account.
    * @param workspaceId - owning Workspace.
@@ -114,6 +116,16 @@ export class WorkspaceController extends Service implements IWorkspaces {
   async archiveSession(sessionId: SessionId): Promise<void> {
     const result = await this.model.archiveSession(sessionId)
     if (!result.ok) throw commandError('session archive', result.error)
+  }
+
+  async pinSession(sessionId: SessionId): Promise<void> {
+    const result = await this.model.pinSession(sessionId)
+    if (!result.ok) throw commandError('session pin', result.error)
+  }
+
+  async unpinSession(sessionId: SessionId): Promise<void> {
+    const result = await this.model.unpinSession(sessionId)
+    if (!result.ok) throw commandError('session unpin', result.error)
   }
 
   async insertSessionBefore(

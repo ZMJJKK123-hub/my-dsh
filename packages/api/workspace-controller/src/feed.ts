@@ -71,6 +71,7 @@ export class WorkspaceFeed {
     return {
       items: this.ctx.workspaceRegistry.list().map(workspaceView),
       archivedSessionIds: [...this.ctx.workspaceRegistry.archivedSessionIds],
+      pinnedSessionIds: [...this.ctx.workspaceRegistry.pinnedSessionIds],
     }
   }
 

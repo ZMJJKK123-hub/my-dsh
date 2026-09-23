@@ -13,6 +13,8 @@ import { workspaceView } from './feed.ts'
 import type {
   WorkspaceArchiveSessionRequest,
   WorkspaceArchiveValue,
+  WorkspacePinSessionRequest,
+  WorkspacePinValue,
   WorkspaceCreateRequest,
   WorkspaceCreateValue,
   WorkspaceDeleteRequest,
@@ -158,6 +160,31 @@ export class WorkspaceCommands {
       throw new RemoteError('session/not-found', error.message, { sessionId: request.sessionId }, { cause: error })
     }
     return { archivedSessionIds: [...this.ctx.workspaceRegistry.archivedSessionIds] }
+  }
+
+  /**
+   * Pin one session (pinned sessions sort first in the client).
+   * @param request - Session identity to pin.
+   * @returns the complete resulting pin set.
+   */
+  async pinSession(request: WorkspacePinSessionRequest): Promise<WorkspacePinValue> {
+    try {
+      await this.ctx.workspaceRegistry.pinSession(request.sessionId)
+    } catch (error) {
+      if (!(error instanceof WorkspaceUnknownSessionError)) throw error
+      throw new RemoteError('session/not-found', error.message, { sessionId: request.sessionId }, { cause: error })
+    }
+    return { pinnedSessionIds: [...this.ctx.workspaceRegistry.pinnedSessionIds] }
+  }
+
+  /**
+   * Unpin one session.
+   * @param request - Session identity to unpin.
+   * @returns the complete resulting pin set.
+   */
+  async unpinSession(request: WorkspacePinSessionRequest): Promise<WorkspacePinValue> {
+    await this.ctx.workspaceRegistry.unpinSession(request.sessionId)
+    return { pinnedSessionIds: [...this.ctx.workspaceRegistry.pinnedSessionIds] }
   }
 
   private requireWorkspace(workspaceId: WorkspaceId): Workspace {
