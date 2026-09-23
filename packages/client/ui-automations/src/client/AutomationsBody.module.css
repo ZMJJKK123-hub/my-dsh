@@ -5,6 +5,10 @@
   min-height: 0;
   height: 100%;
   overflow: auto;
+  /* Above decorative skin layers (maid-atelier uses up to z-index:40). */
+  position: relative;
+  z-index: 10;
+  background: var(--dsw-alias-bg-layer-1, #fff);
 }
 
 .header {

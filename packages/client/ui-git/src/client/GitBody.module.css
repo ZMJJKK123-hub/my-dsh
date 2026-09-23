@@ -5,6 +5,11 @@
   min-height: 0;
   height: 100%;
   overflow: hidden;
+  /* Above decorative skin layers (maid-atelier uses up to z-index:40);
+     the panel content must stay clickable and readable. */
+  position: relative;
+  z-index: 10;
+  background: var(--dsw-alias-bg-layer-1, #fff);
 }
 
 .header {
