@@ -2047,6 +2047,9 @@ importers:
       '@dsh-custom/dsh-client-ui-git':
         specifier: workspace:^
         version: link:../../client/ui-git
+      '@dsh-custom/dsh-client-ui-theme-zai':
+        specifier: workspace:^
+        version: link:../../client/ui-theme-zai
       '@dsh-custom/dsh-client-ui-turn-sounds':
         specifier: workspace:^
         version: link:../../client/ui-turn-sounds
@@ -4369,6 +4372,31 @@ importers:
       react:
         specifier: ^18.2.0
         version: 18.3.1
+
+  packages/client/ui-theme-zai:
+    dependencies:
+      react:
+        specifier: ^18.2.0
+        version: 18.3.1
+      react-dom:
+        specifier: ^18.2.0
+        version: 18.3.1(react@18.3.1)
+    devDependencies:
+      '@deepseek-ai/cordis':
+        specifier: workspace:*
+        version: link:../../../vendor/cordis
+      '@deepseek-ai/dsh-client-ui-renderer':
+        specifier: workspace:*
+        version: link:../ui-renderer
+      '@deepseek-ai/dsh-client-ui-theme':
+        specifier: workspace:*
+        version: link:../ui-theme
+      '@types/react':
+        specifier: ~18.3.1
+        version: 18.3.31
+      '@types/react-dom':
+        specifier: ~18.3.0
+        version: 18.3.7(@types/react@18.3.31)
 
   packages/client/ui-tool:
     dependencies:

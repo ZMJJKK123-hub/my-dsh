@@ -291,6 +291,9 @@
     - id: ui-voice-input
       name: '@dsh-custom/dsh-client-ui-voice-input'
 
+    - id: ui-theme-zai
+      name: '@dsh-custom/dsh-client-ui-theme-zai'
+
     - id: ui-background
       name: '@dsh-custom/dsh-client-ui-background'
 

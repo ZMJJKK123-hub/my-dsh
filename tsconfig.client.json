@@ -118,6 +118,7 @@
     { "path": "./packages/client/ui-change-monitor" },
     { "path": "./packages/client/ui-git" },
     { "path": "./packages/client/ui-automations" },
+    { "path": "./packages/client/ui-theme-zai" },
     { "path": "./packages/client/ui-voice-input" },
     { "path": "./packages/client/ui-background" },
     { "path": "./packages/client/ui-turn-sounds" },
