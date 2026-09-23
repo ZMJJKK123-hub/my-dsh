@@ -2,7 +2,7 @@
 
 > 背景：将 ZCode（`C:/Users/59639/Desktop/ZCode`，AI 编程工作台 monorepo）的能力移植到本仓库（DeepSeek Harness 个人 fork）。
 > 本文件是**唯一拍板记录**，后续会话直接读本文件恢复上下文，不需要用户重述决定。
-> 状态：P1✅ P2✅ P3✅ **P4 多品牌主题✅**（ui-theme-zai 包 b6ce036 + zod 运行时修复 bee9dd3/30ae0ef/删除冲突修复；E2E 实测 dsh web 启动 → 源代码面板 + 定时任务面板 + 引导卡片均正常渲染）。下一步 P5。
+> 状态：P1✅ P2✅ P3✅ P4✅ P5✅（已内置：base+依赖+自解析） **P6 进行中**（域字段 pinSession/unpinSession df37422；workspace 控制器暴露 + 客户端 pin/unread 渲染待做）。P7 CUA 完全移植待做。
 > 实现节奏约定（用户要求）：一次只做一个小任务、小步走；每完成一小步就 git commit 便于回撤；严格遵循 dsh 现有插件架构；插件直接加进树，不做商店管理 UI。
 > 最后更新：2026-09-22
 
