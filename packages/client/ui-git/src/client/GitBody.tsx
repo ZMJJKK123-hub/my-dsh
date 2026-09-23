@@ -111,6 +111,19 @@ export function GitBody({
     return <div className={css.panel} data-git-panel="loading">{t('loading')}</div>
   }
 
+  // The panel is per-session; without a git workspace there is nothing to
+  // show — guide the user instead of leaving a blank panel.
+  if (state.status.kind === 'failed' && state.status.message.includes('not a git repository')) {
+    return (
+      <div className={css.panel} data-git-panel="no-workspace">
+        <header className={css.header}>
+          <span className={css.headTitle}><IconBranchOutline16 /> {t('type.label')}</span>
+        </header>
+        <div className={css.note}>{t('noWorkspace')}</div>
+      </div>
+    )
+  }
+
   // A fresh draft lands in the commit box once; typing afterwards is the user's.
   useEffect(() => {
     if (state?.generated !== undefined) setMessage(state.generated)
