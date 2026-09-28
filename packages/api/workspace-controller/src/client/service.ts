@@ -62,7 +62,15 @@ export interface IWorkspaces {
    * @param sessionId - Session to archive.
    */
   archiveSession(sessionId: SessionId): Promise<void>
+  /**
+   * Pin a Session so it sorts first in the listing.
+   * @param sessionId - Session to pin.
+   */
   pinSession(sessionId: SessionId): Promise<void>
+  /**
+   * Unpin a Session.
+   * @param sessionId - Session to unpin.
+   */
   unpinSession(sessionId: SessionId): Promise<void>
   /**
    * Move a Session within one Workspace account.

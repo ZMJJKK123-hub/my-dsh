@@ -166,6 +166,7 @@ export class FakeApiClient {
   workspaceBaseline: Extract<WorkspaceFollowFrame, { type: 'baseline' }>['value'] = {
     items: [],
     archivedSessionIds: [],
+    pinnedSessionIds: [],
   }
   lastSearchSignal: AbortSignal | undefined
 
@@ -194,6 +195,9 @@ export class FakeApiClient {
 
   onWorkspaceArchiveSession: (payload: unknown) => Promise<RemoteResult<{ archivedSessionIds: SessionId[] }>> =
     payload => Promise.resolve(ok({ archivedSessionIds: [(payload as { sessionId: SessionId }).sessionId] }))
+
+  onWorkspacePinSession: (payload: unknown) => Promise<RemoteResult<{ pinnedSessionIds: SessionId[] }>> =
+    payload => Promise.resolve(ok({ pinnedSessionIds: [(payload as { sessionId: SessionId }).sessionId] }))
 
   /** Remote namespaces bound to this fake's programmable unary slots and stream pumps. */
   sessionRemotes(): RuntimeRemotes {
@@ -272,6 +276,16 @@ export class FakeApiClient {
           'workspace.archiveSession',
           payload,
           this.onWorkspaceArchiveSession(payload),
+        ),
+        pinSession: payload => this.record(
+          'workspace.pinSession',
+          payload,
+          this.onWorkspacePinSession(payload),
+        ),
+        unpinSession: payload => this.record(
+          'workspace.unpinSession',
+          payload,
+          this.onWorkspacePinSession(payload),
         ),
         follow: signal => this.openWorkspace(signal),
       },

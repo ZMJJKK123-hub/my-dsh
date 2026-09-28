@@ -21,6 +21,8 @@ import {
 import type {
   WorkspaceArchiveSessionRequest,
   WorkspaceArchiveValue,
+  WorkspacePinSessionRequest,
+  WorkspacePinValue,
   WorkspaceCreateRequest,
   WorkspaceCreateValue,
   WorkspaceDeleteRequest,
@@ -72,6 +74,7 @@ const baseline = (id?: string): Extract<WorkspaceFollowFrame, { type: 'baseline'
       updatedAt: '2026-01-01T00:00:00.000Z',
     }],
     archivedSessionIds: [],
+    pinnedSessionIds: [],
   },
 })
 
@@ -106,6 +109,7 @@ function accepts(overrides: Partial<WorkspaceFollowSink> = {}): WorkspaceFollowS
     removeView: ignore,
     replaceOrder: ignore,
     replaceArchived: ignore,
+    replacePinned: ignore,
     ...overrides,
   }
 }
@@ -137,6 +141,14 @@ class ScriptedWorkspaceRemote implements WorkspaceRemote {
   }
 
   archiveSession(_request: WorkspaceArchiveSessionRequest): Promise<RemoteResult<WorkspaceArchiveValue>> {
+    throw new Error('unused')
+  }
+
+  pinSession(_request: WorkspacePinSessionRequest): Promise<RemoteResult<WorkspacePinValue>> {
+    throw new Error('unused')
+  }
+
+  unpinSession(_request: WorkspacePinSessionRequest): Promise<RemoteResult<WorkspacePinValue>> {
     throw new Error('unused')
   }
 
@@ -178,6 +190,14 @@ class CommandWorkspaceRemote implements WorkspaceRemote {
 
   readonly archiveSession = vi.fn<WorkspaceRemote['archiveSession']>(request => Promise.resolve(remoteOk({
     archivedSessionIds: [request.sessionId],
+  })))
+
+  readonly pinSession = vi.fn<WorkspaceRemote['pinSession']>(request => Promise.resolve(remoteOk({
+    pinnedSessionIds: [request.sessionId],
+  })))
+
+  readonly unpinSession = vi.fn<WorkspaceRemote['unpinSession']>(() => Promise.resolve(remoteOk({
+    pinnedSessionIds: [],
   })))
 
   async *follow(_signal?: AbortSignal): AsyncIterable<WorkspaceFollowFrame> {}
