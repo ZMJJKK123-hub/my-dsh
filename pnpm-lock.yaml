@@ -1611,6 +1611,9 @@ importers:
       '@dsh-custom/dsh-checkpoint-watcher':
         specifier: workspace:^
         version: link:../../git/checkpoint-watcher
+      '@dsh-custom/dsh-cua-guard':
+        specifier: workspace:^
+        version: link:../../shell/cua-guard
       '@dsh-custom/dsh-git':
         specifier: workspace:^
         version: link:../../git/git

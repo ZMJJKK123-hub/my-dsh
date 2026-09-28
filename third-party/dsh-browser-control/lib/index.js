@@ -383,7 +383,11 @@ export default {
       },
     })))
 
-    // 后台启动浏览器
-    const p = ensureStarted()
+    // 后台启动浏览器：启动失败只降级（状态栏报错），绝不冒泡成未处理拒绝——
+    // 宿主加载期的一次拒绝会直接终止整个 dsh 进程。
+    ensureStarted().catch((e) => {
+      state.status = 'error'
+      state.lastError = String((e && e.message) || e)
+    })
   },
 }
